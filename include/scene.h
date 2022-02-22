@@ -33,6 +33,7 @@ private:
     std::string parseQuad(std::ifstream& ifs);
 public:
     Scene(const std::string& filename);
+    void render(const std::string& filename);
     friend std::ostream& operator<<(std::ostream& os, Scene& s);
 };
 

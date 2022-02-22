@@ -1,6 +1,7 @@
 #include <scene.h>
 #include <fstream>
 #include <sstream>
+#include <bitmap_header.h>
 
 namespace dng {
 
@@ -133,6 +134,24 @@ Scene::Scene(const std::string& filename)
             ifs >> str;
         } else {
             ifs >> str;
+        }
+    }
+}
+
+void Scene::render(const std::string& filename) {
+    // Write bmp header
+    std::ofstream ofs(filename, std::ios::out | std::ios::binary);
+    BitmapHeader bmpHead(_width, _height);
+    ofs.write(bmpHead.rawData, sizeof(bmpHead));
+    for (int i = 0; i < _width; i++) {
+        for (int j = 0; j < _height; j++) {
+            glm::vec3 color((float) i / _width, (float) j / _height, 0.0f);
+            uint8_t r = (uint8_t)(255 * color.r);
+            uint8_t g = (uint8_t)(255 * color.g);
+            uint8_t b = (uint8_t)(255 * color.b);
+            ofs.write((char*) &b, sizeof(uint8_t));
+            ofs.write((char*) &g, sizeof(uint8_t));
+            ofs.write((char*) &r, sizeof(uint8_t));
         }
     }
 }
