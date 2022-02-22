@@ -9,7 +9,7 @@
       "type": "cppvsdbg",
       "request": "launch",
       "program": "${workspaceFolder}/x64/Debug/${workspaceFolderBasename}.exe",
-      "args": [],
+      "args": ["scenes/cornell1.txt", "out/cornell1.bmp"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
