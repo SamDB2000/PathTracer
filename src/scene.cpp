@@ -139,13 +139,51 @@ Scene::Scene(const std::string& filename)
 }
 
 void Scene::render(const std::string& filename) {
+    std::vector<std::vector<glm::vec3>> buffer(_width, std::vector<glm::vec3>(_height));
+
+    // Camera Params
+    glm::vec3 up(0.0f, 1.0f, 0.0f);
+    glm::vec3 lookAt(0.0f, 0.0f, -1.0f);
+    glm::vec3 eye(0.0f, 0.0f, 0.0f);
+
+    // Gramm-Schmidt orthonormalization
+    glm::vec3 l = glm::normalize(lookAt - eye);
+    glm::vec3 v = glm::normalize(glm::cross(l, up));
+    glm::vec3 u = glm::cross(v, l);
+
+    float aspectRatio = (float) _height / _width;
+    float focalLength = 1.0f / std::tanf(_fov / 2.0f);
+    glm::vec3 ll = eye + focalLength * l - v - aspectRatio * u;
+    for (int i = 0; i < _width; i++) {
+        for (int j = 0; j < _height; j++) {
+            glm::vec3 p = ll + 2.0f * v * ((float) i / _width) +
+                          2.0f * aspectRatio * u * ((float) j / _height);
+            glm::vec3 ray = glm::normalize(p - eye);
+            buffer[i][j] = glm::vec3(std::abs(ray.x), std::abs(ray.y), std::abs(ray.z));
+        }
+    }
+    // for (int i = 0; i < bufferSize; i++) {
+    //     glm::vec3 color;
+    //     for (int r = 0; r < _antialias; r++) {
+    //         float y = 2 * ((i / _width) + ((float) r / _antialias)) / _height - 1;
+    //         for (int c = 0; c < _antialias; c++) {
+    //             float x = 2 * ((i % _width) + ((float) c / _antialias)) / _width - 1;
+    //             glm::vec3 p = ll + 2.0f * aspectRatio * v * x + 2.0f * u * y;
+    //             glm::vec3 ray = glm::normalize(p);
+    //             color += ray;
+    //         }
+    //     }
+
+    //     buffer[i] = color / ((float) _antialias * _antialias);
+    // }
+
     // Write bmp header
     std::ofstream ofs(filename, std::ios::out | std::ios::binary);
     BitmapHeader bmpHead(_width, _height);
     ofs.write(bmpHead.rawData, sizeof(bmpHead));
     for (int i = 0; i < _width; i++) {
         for (int j = 0; j < _height; j++) {
-            glm::vec3 color((float) i / _width, (float) j / _height, 0.0f);
+            glm::vec3 color = buffer[i][j];
             uint8_t r = (uint8_t)(255 * color.r);
             uint8_t g = (uint8_t)(255 * color.g);
             uint8_t b = (uint8_t)(255 * color.b);
