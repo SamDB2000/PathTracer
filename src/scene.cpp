@@ -165,6 +165,42 @@ float Scene::raycast(glm::vec3 rayPos, glm::vec3 rayDir) {
     return dist;
 }
 
+glm::vec3 Scene::raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter) {
+    if (iter >= _maxDepth)
+        return glm::vec3(0.0f);
+    glm::vec3 color = _backgroundColor;
+    glm::vec3 hitPos;
+    glm::vec3 normal;
+    Material mat;
+    float dist = raycast(rayPos, rayDir, hitPos, normal, mat);
+    if (dist > 0.0f) {
+        color = mat.amb;
+        glm::vec3 shadowRayStart = hitPos + 0.001f * normal;
+        for (Light& light : _lights) {
+            glm::vec3 toLight = light.pos - hitPos;
+            glm::vec3 toLightNorm = glm::normalize(toLight);
+
+            float shadowRay = raycast(shadowRayStart, toLightNorm);
+            if (shadowRay == 0.0f || shadowRay > glm::distance(light.pos, hitPos)) {
+                // Diffuse
+                float diffuseFactor = std::max(glm::dot(normal, toLightNorm), 0.0f);
+                color += light.diff * mat.diff * diffuseFactor;
+                if (mat.diff != glm::vec3(0.0f)) {
+                    color +=
+                        mat.spec * raytrace(shadowRayStart, glm::reflect(rayDir, normal), iter + 1);
+                }
+                if (diffuseFactor > 0.0f) {
+                    // Specular
+                    color += light.spec * mat.spec *
+                             std::pow(glm::dot(-rayDir, glm::reflect(toLightNorm, normal)),
+                                      mat.shininess);
+                }
+            }
+        }
+    }
+    return color;
+}
+
 void Scene::render(const std::string& filename) {
     int width = _width * _antialias;
     int height = _height * _antialias;
@@ -184,6 +220,8 @@ void Scene::render(const std::string& filename) {
     float focalLength = 1.0f / glm::tan(_fov / 2.0f);
     glm::vec3 ll = eye + focalLength * l - aspectRatio * v - u;
 
+    size_t completed = 0;
+
 #pragma omp parallel for
     for (int i = 0; i < width * height; i++) {
         float x = i / width;
@@ -191,32 +229,17 @@ void Scene::render(const std::string& filename) {
         glm::vec3 p =
             ll + 2.0f * aspectRatio * v * ((float) x / width) + 2.0f * u * ((float) y / height);
         glm::vec3 ray = glm::normalize(p - eye);
+        buffer[x][y] = glm::clamp(raytrace(eye, ray), glm::vec3(0.0f), glm::vec3(1.0f));
 
-        glm::vec3 hitPos;
-        glm::vec3 normal;
-        Material mat;
-        float dist = raycast(eye, ray, hitPos, normal, mat);
-        if (dist > 0.0f) {
-            glm::vec3 color = mat.amb;
-            glm::vec3 shadowRayStart = hitPos + 0.01f * normal;
-            for (Light& light : _lights) {
-                glm::vec3 toLight = light.pos - hitPos;
-                glm::vec3 toLightNorm = glm::normalize(toLight);
-                // Diffuse
-                float diffuseFactor = std::max(glm::dot(normal, toLightNorm), 0.0f);
-                color += light.diff * mat.diff * diffuseFactor;
-                if (diffuseFactor > 0.0f) {
-                    // Specular
-                    color +=
-                        light.spec * mat.spec *
-                        std::pow(glm::dot(-ray, glm::reflect(toLightNorm, normal)), mat.shininess);
-                }
-            }
-            buffer[x][y] = glm::clamp(color, glm::vec3(0.0f), glm::vec3(1.0f));
-        } else {
-            buffer[x][y] = _backgroundColor;
+#pragma omp atomic
+        completed++;
+        if ((100 * completed) % (width * height) == 0) {
+            int percent = 100 * completed / (width * height);
+#pragma omp critical
+            std::cout << "\rRendering " << percent << "% complete";
         }
     }
+    std::cout << "\rRendering 100% complete. Writing to " << filename << '\n';
 
     // Write bmp header
     std::ofstream ofs(filename, std::ios::out | std::ios::binary);
@@ -237,6 +260,7 @@ void Scene::render(const std::string& filename) {
             ofs.write((char*) &r, sizeof(uint8_t));
         }
     }
+    std::cout << "Done writing\n";
 }
 
 std::ostream& operator<<(std::ostream& os, Scene& s) {

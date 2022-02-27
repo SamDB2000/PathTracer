@@ -1,7 +1,7 @@
 // Cornell Box for RayTracer
 ANTIALIAS 3
 BACKGROUND 0 0 0        // Background color
-MAXDEPTH 17              // Raytracing depth
+MAXDEPTH 4              // Raytracing depth
 LIGHT
     POS 10 10 100
     DIFF 1.0 1.0 1.0 	//white light

@@ -31,6 +31,7 @@ private:
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal,
                   Material& mat);
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir);
+    glm::vec3 raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter = 0);
 
 public:
     Scene(const std::string& filename);
