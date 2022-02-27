@@ -7,13 +7,13 @@
 namespace dng {
 
 struct Triangle {
-    Material& m;
-    glm::vec3& v0;
-    glm::vec3& v1;
-    glm::vec3& v2;
-    glm::vec3& n0;
-    glm::vec3& n1;
-    glm::vec3& n2;
+    Material m;
+    glm::vec3 v0;
+    glm::vec3 v1;
+    glm::vec3 v2;
+    glm::vec3 n;
+
+    float raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal);
 };
 
 }  // namespace dng

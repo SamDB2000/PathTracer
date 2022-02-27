@@ -63,6 +63,7 @@ std::string Scene::parseSphere(std::ifstream& ifs) {
 std::string Scene::parseQuad(std::ifstream& ifs) {
     Material m;
     std::vector<glm::vec3> verts;
+    verts.reserve(4);
     std::string str;
     while (ifs) {
         ifs >> str;
@@ -78,23 +79,12 @@ std::string Scene::parseQuad(std::ifstream& ifs) {
             break;
         }
     }
-    if (verts.size() == 3 || verts.size() == 4) {
-        int i = _verts.size();
-        _verts.reserve(i + 4);
-        for (auto& v : verts)
-            _verts.push_back(v);
-        if (verts.size() == 3)
-            _verts.push_back(_verts[i + 1] + _verts[i + 2] - _verts[i]);
-
-        _norms.push_back(
-            glm::normalize(glm::cross(_verts[i] - _verts[i + 1], _verts[i] - _verts[i + 2])));
-        glm::vec3& n = _norms.back();
-
-        _mats.push_back(m);
-        _tris.emplace_back(
-            Triangle{ _mats.back(), _verts[i], _verts[i + 1], _verts[i + 2], n, n, n });
-        _tris.emplace_back(
-            Triangle{ _mats.back(), _verts[i + 3], _verts[i + 1], _verts[i + 2], n, n, n });
+    if (verts.size() == 3)
+        verts.push_back(verts[1] + verts[2] - verts[0]);
+    if (verts.size() == 4) {
+        glm::vec3 n = glm::normalize(glm::cross(verts[0] - verts[1], verts[0] - verts[2]));
+        _tris.emplace_back(Triangle{ m, verts[0], verts[1], verts[2], n });
+        _tris.emplace_back(Triangle{ m, verts[3], verts[1], verts[2], n });
     }
     return str;
 }
@@ -176,6 +166,17 @@ void Scene::render(const std::string& filename) {
                     hitMat = sphere.m;
                 }
             }
+            for (Triangle& tri : _tris) {
+                glm::vec3 hitPos;
+                glm::vec3 normal;
+                float dist = tri.raycast(eye, ray, hitPos, normal);
+                if (dist > 0.0f && dist < minDist) {
+                    minDist = dist;
+                    minHitPos = hitPos;
+                    minNormal = normal;
+                    hitMat = tri.m;
+                }
+            }
             if (minDist < inf) {
                 buffer[x][y] = hitMat.diff;
             } else {
@@ -207,9 +208,8 @@ void Scene::render(const std::string& filename) {
 
 std::ostream& operator<<(std::ostream& os, Scene& s) {
     os << "[Scene resolution=" << s._width << "x" << s._height << " antialias=" << s._antialias
-       << " maxDepth=" << s._maxDepth << " | " << s._mats.size() << " materials, "
-       << s._lights.size() << " lights, " << s._spheres.size() << " spheres, " << s._tris.size()
-       << " tris]";
+       << " maxDepth=" << s._maxDepth << " | " << s._lights.size() << " lights, "
+       << s._spheres.size() << " spheres, " << s._tris.size() << " tris]";
     return os;
 }
 

@@ -19,12 +19,9 @@ private:
     unsigned int _width;
     unsigned int _height;
     float _fov;
-    std::vector<Material> _mats;
     std::vector<Light> _lights;
     std::vector<Sphere> _spheres;
     std::vector<Triangle> _tris;
-    std::vector<glm::vec3> _verts;
-    std::vector<glm::vec3> _norms;
 
     void readVec(std::ifstream& ifs, glm::vec3& vec);
     void parseMatProp(std::ifstream& ifs, const std::string& str, Material& m);
