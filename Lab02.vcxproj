@@ -89,6 +89,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../include/; ./include/</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -104,6 +105,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../include/; ./include/</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -117,6 +119,14 @@
     <ClCompile Include="src/scene.cpp" />
     <ClCompile Include="src/sphere.cpp" />
     <ClCompile Include="src/triangle.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\bitmap_header.h" />
+    <ClInclude Include="include\light.h" />
+    <ClInclude Include="include\material.h" />
+    <ClInclude Include="include\scene.h" />
+    <ClInclude Include="include\sphere.h" />
+    <ClInclude Include="include\triangle.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

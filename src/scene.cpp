@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <bitmap_header.h>
+#include <omp.h>
 
 namespace dng {
 
@@ -145,43 +146,45 @@ void Scene::render(const std::string& filename) {
     float aspectRatio = (float) width / height;
     float focalLength = 1.0f / glm::tan(_fov / 2.0f);
     glm::vec3 ll = eye + focalLength * l - aspectRatio * v - u;
-    for (int x = 0; x < width; x++) {
-        for (int y = 0; y < height; y++) {
-            glm::vec3 p =
-                ll + 2.0f * aspectRatio * v * ((float) x / width) + 2.0f * u * ((float) y / height);
-            glm::vec3 ray = glm::normalize(p - eye);
 
-            float minDist = inf;
-            glm::vec3 minHitPos;
-            glm::vec3 minNormal;
-            Material hitMat;
-            for (Sphere& sphere : _spheres) {
-                glm::vec3 hitPos;
-                glm::vec3 normal;
-                float dist = sphere.raycast(eye, ray, hitPos, normal);
-                if (dist > 0.0f && dist < minDist) {
-                    minDist = dist;
-                    minHitPos = hitPos;
-                    minNormal = normal;
-                    hitMat = sphere.m;
-                }
+#pragma omp parallel for
+    for (int i = 0; i < width * height; i++) {
+        float x = i / width;
+        float y = i % width;
+        glm::vec3 p =
+            ll + 2.0f * aspectRatio * v * ((float) x / width) + 2.0f * u * ((float) y / height);
+        glm::vec3 ray = glm::normalize(p - eye);
+
+        float minDist = inf;
+        glm::vec3 minHitPos;
+        glm::vec3 minNormal;
+        Material hitMat;
+        for (Sphere& sphere : _spheres) {
+            glm::vec3 hitPos;
+            glm::vec3 normal;
+            float dist = sphere.raycast(eye, ray, hitPos, normal);
+            if (dist > 0.0f && dist < minDist) {
+                minDist = dist;
+                minHitPos = hitPos;
+                minNormal = normal;
+                hitMat = sphere.m;
             }
-            for (Triangle& tri : _tris) {
-                glm::vec3 hitPos;
-                glm::vec3 normal;
-                float dist = tri.raycast(eye, ray, hitPos, normal);
-                if (dist > 0.0f && dist < minDist) {
-                    minDist = dist;
-                    minHitPos = hitPos;
-                    minNormal = normal;
-                    hitMat = tri.m;
-                }
+        }
+        for (Triangle& tri : _tris) {
+            glm::vec3 hitPos;
+            glm::vec3 normal;
+            float dist = tri.raycast(eye, ray, hitPos, normal);
+            if (dist > 0.0f && dist < minDist) {
+                minDist = dist;
+                minHitPos = hitPos;
+                minNormal = normal;
+                hitMat = tri.m;
             }
-            if (minDist < inf) {
-                buffer[x][y] = hitMat.diff;
-            } else {
-                buffer[x][y] = _backgroundColor;
-            }
+        }
+        if (minDist < inf) {
+            buffer[x][y] = hitMat.diff;
+        } else {
+            buffer[x][y] = _backgroundColor;
         }
     }
 
