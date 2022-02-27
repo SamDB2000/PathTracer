@@ -38,6 +38,8 @@ std::string Scene::parseLight(std::ifstream& ifs) {
             break;
     }
     _lights.push_back(l);
+    // _spheres.push_back(Sphere{
+    //     Material{ glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, glm::vec3(l.diff) }, l.pos, 10.0f });
     return str;
 }
 
@@ -83,8 +85,9 @@ std::string Scene::parseQuad(std::ifstream& ifs) {
     if (verts.size() == 3)
         verts.push_back(verts[1] + verts[2] - verts[0]);
     if (verts.size() == 4) {
-        _tris.emplace_back(Triangle{ m, verts[2], verts[1], verts[0] });
-        _tris.emplace_back(Triangle{ m, verts[1], verts[2], verts[3] });
+        _meshes.emplace_back(Mesh{ m,
+                                   { Triangle{ m, verts[2], verts[1], verts[0] },
+                                     Triangle{ m, verts[1], verts[2], verts[3] } } });
     }
     return str;
 }
@@ -142,15 +145,15 @@ float Scene::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm:
             mat = sphere.m;
         }
     }
-    for (Triangle& tri : _tris) {
+    for (Mesh& mesh : _meshes) {
         glm::vec3 localHitPos;
         glm::vec3 localNormal;
-        float dist = tri.raycast(rayPos, rayDir, localHitPos, localNormal);
+        float dist = mesh.raycast(rayPos, rayDir, localHitPos, localNormal);
         if (dist > 0.0f && dist < minDist) {
             minDist = dist;
             hitPos = localHitPos;
             normal = localNormal;
-            mat = tri.m;
+            mat = mesh.m;
         }
     }
 
@@ -185,16 +188,14 @@ glm::vec3 Scene::raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter) {
                 // Diffuse
                 float diffuseFactor = std::max(glm::dot(normal, toLightNorm), 0.0f);
                 color += light.diff * mat.diff * diffuseFactor;
-                if (mat.diff != glm::vec3(0.0f)) {
-                    color +=
-                        mat.spec * raytrace(shadowRayStart, glm::reflect(rayDir, normal), iter + 1);
-                }
-                if (diffuseFactor > 0.0f) {
-                    // Specular
-                    color += light.spec * mat.spec *
-                             std::pow(glm::dot(-rayDir, glm::reflect(toLightNorm, normal)),
-                                      mat.shininess);
-                }
+                // Specular
+                color +=
+                    light.spec * mat.spec *
+                    std::pow(glm::dot(-rayDir, glm::reflect(toLightNorm, normal)), mat.shininess);
+            }
+            if (mat.diff != glm::vec3(0.0f)) {
+                color += mat.spec * 0.5f *
+                         raytrace(shadowRayStart, glm::reflect(rayDir, normal), iter + 1);
             }
         }
     }
@@ -266,7 +267,7 @@ void Scene::render(const std::string& filename) {
 std::ostream& operator<<(std::ostream& os, Scene& s) {
     os << "[Scene resolution=" << s._width << "x" << s._height << " antialias=" << s._antialias
        << " maxDepth=" << s._maxDepth << " | " << s._lights.size() << " lights, "
-       << s._spheres.size() << " spheres, " << s._tris.size() << " tris]";
+       << s._spheres.size() << " spheres, " << s._meshes.size() << " meshes]";
     return os;
 }
 

@@ -17,10 +17,21 @@
       "type": "shell",
       "label": "msbuild",
       "command": "msbuild.exe",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "type": "shell",
+      "label": "msbuild (Release)",
+      "command": "msbuild.exe",
+      "args": [
+        "/property:Configuration=Release"
+      ],
       "group": {
         "kind": "build",
         "isDefault": true
-      }
+      },
+      "problemMatcher": []
     }
   ]
 }

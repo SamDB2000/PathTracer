@@ -12,6 +12,7 @@ int main(int argc, char const* argv[]) {
     }
 
     dng::Scene scene(argv[1]);
+    std::cout << scene << '\n';
     scene.render(argv[2]);
 
     return 0;

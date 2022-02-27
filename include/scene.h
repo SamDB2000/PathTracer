@@ -7,7 +7,7 @@
 #include <light.h>
 #include <material.h>
 #include <sphere.h>
-#include <triangle.h>
+#include <mesh.h>
 
 namespace dng {
 
@@ -21,7 +21,7 @@ private:
     float _fov;
     std::vector<Light> _lights;
     std::vector<Sphere> _spheres;
-    std::vector<Triangle> _tris;
+    std::vector<Mesh> _meshes;
 
     void readVec(std::ifstream& ifs, glm::vec3& vec);
     void parseMatProp(std::ifstream& ifs, const std::string& str, Material& m);

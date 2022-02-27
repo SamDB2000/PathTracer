@@ -5,7 +5,6 @@ namespace dng {
 float Sphere::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal) {
     glm::vec3 v = pos - rayPos;
     float t0 = glm::dot(v, rayDir);
-    float temp = glm::distance(rayDir * t0, glm::vec3(0,0,0));
     if (t0 < 0)
         return 0;
     float dSqr = glm::dot(v, v) - t0 * t0;
@@ -26,7 +25,7 @@ float Sphere::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm
         return 0;
 
     hitPos = rayPos + rayDir * t;
-    normal = glm::normalize(pos - hitPos);
+    normal = glm::normalize(hitPos - pos);
     return t;
 }
 
