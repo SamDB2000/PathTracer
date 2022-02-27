@@ -1,0 +1,25 @@
+ANTIALIAS 3
+MAXDEPTH 17              // Raytracing depth
+LIGHT
+    POS 0 150 -100
+    DIFF 1.0 1.0 1.0 	//white light
+    SPEC 1.0 1.0 1.0	//full  white specular
+
+
+SPHERE
+    POS 0 0 0 RADIUS 60
+    DIFF 1.0 0.33 0.33
+    SPEC 1.0 1.0 1.0
+	SHININESS 20.0
+
+SPHERE
+    POS 0 50 -50 RADIUS 45
+    DIFF 1.0 1.0 0.33
+    SPEC 1.0 0.0 1.0
+	SHININESS 20.0
+
+SPHERE
+    POS 50 0 0 RADIUS 15
+    DIFF 1.0 1.0 0.33
+    SPEC 1.0 0.0 1.0
+	SHININESS 20.0

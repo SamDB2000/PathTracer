@@ -83,9 +83,8 @@ std::string Scene::parseQuad(std::ifstream& ifs) {
     if (verts.size() == 3)
         verts.push_back(verts[1] + verts[2] - verts[0]);
     if (verts.size() == 4) {
-        glm::vec3 n = glm::normalize(glm::cross(verts[0] - verts[1], verts[0] - verts[2]));
-        _tris.emplace_back(Triangle{ m, verts[0], verts[1], verts[2], n });
-        _tris.emplace_back(Triangle{ m, verts[3], verts[1], verts[2], n });
+        _tris.emplace_back(Triangle{ m, verts[0], verts[1], verts[2] });
+        _tris.emplace_back(Triangle{ m, verts[3], verts[2], verts[1] });
     }
     return str;
 }
@@ -127,16 +126,54 @@ Scene::Scene(const std::string& filename)
     }
 }
 
+float Scene::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal,
+                     Material& mat) {
+    float inf = std::numeric_limits<float>::infinity();
+    float minDist = inf;
+
+    for (Sphere& sphere : _spheres) {
+        glm::vec3 localHitPos;
+        glm::vec3 localNormal;
+        float dist = sphere.raycast(rayPos, rayDir, localHitPos, localNormal);
+        if (dist > 0.0f && dist < minDist) {
+            minDist = dist;
+            hitPos = localHitPos;
+            normal = localNormal;
+            mat = sphere.m;
+        }
+    }
+    for (Triangle& tri : _tris) {
+        glm::vec3 localHitPos;
+        glm::vec3 localNormal;
+        float dist = tri.raycast(rayPos, rayDir, localHitPos, localNormal);
+        if (dist > 0.0f && dist < minDist) {
+            minDist = dist;
+            hitPos = localHitPos;
+            normal = localNormal;
+            mat = tri.m;
+        }
+    }
+
+    return minDist < inf ? minDist : 0.0f;
+}
+
+float Scene::raycast(glm::vec3 rayPos, glm::vec3 rayDir) {
+    glm::vec3 hitPos;
+    glm::vec3 normal;
+    Material mat;
+    float dist = raycast(rayPos, rayDir, hitPos, normal, mat);
+    return dist;
+}
+
 void Scene::render(const std::string& filename) {
     int width = _width * _antialias;
     int height = _height * _antialias;
     std::vector<std::vector<glm::vec3>> buffer(width, std::vector<glm::vec3>(height));
 
-    float inf = std::numeric_limits<float>::infinity();
     // Camera Params
     glm::vec3 up(0.0f, 1.0f, 0.0f);
     glm::vec3 lookAt(0.0f, 0.0, -1.0f);
-    glm::vec3 eye(0.0f, 0.0f, -150.0f);
+    glm::vec3 eye(0.0f, 0.0f, 150.0f);
 
     // Gramm-Schmidt orthonormalization
     glm::vec3 l = glm::normalize(lookAt - eye);
@@ -155,34 +192,23 @@ void Scene::render(const std::string& filename) {
             ll + 2.0f * aspectRatio * v * ((float) x / width) + 2.0f * u * ((float) y / height);
         glm::vec3 ray = glm::normalize(p - eye);
 
-        float minDist = inf;
-        glm::vec3 minHitPos;
-        glm::vec3 minNormal;
-        Material hitMat;
-        for (Sphere& sphere : _spheres) {
-            glm::vec3 hitPos;
-            glm::vec3 normal;
-            float dist = sphere.raycast(eye, ray, hitPos, normal);
-            if (dist > 0.0f && dist < minDist) {
-                minDist = dist;
-                minHitPos = hitPos;
-                minNormal = normal;
-                hitMat = sphere.m;
+        glm::vec3 hitPos;
+        glm::vec3 normal;
+        Material mat;
+        float dist = raycast(eye, ray, hitPos, normal, mat);
+        if (dist > 0.0f) {
+            glm::vec3 color = mat.amb;
+            glm::vec3 shadowRayStart = hitPos + 0.01f * normal;
+            for (Light& light : _lights) {
+                glm::vec3 toLight = hitPos - light.pos;
+                glm::vec3 toLightNorm = glm::normalize(toLight);
+                // Diffuse
+                color += light.diff * mat.diff * std::max(glm::dot(normal, toLightNorm), 0.0f);
+                // Specular
+                color += light.spec * mat.spec *
+                         std::pow(glm::dot(-ray, glm::reflect(toLightNorm, normal)), mat.shininess);
             }
-        }
-        for (Triangle& tri : _tris) {
-            glm::vec3 hitPos;
-            glm::vec3 normal;
-            float dist = tri.raycast(eye, ray, hitPos, normal);
-            if (dist > 0.0f && dist < minDist) {
-                minDist = dist;
-                minHitPos = hitPos;
-                minNormal = normal;
-                hitMat = tri.m;
-            }
-        }
-        if (minDist < inf) {
-            buffer[x][y] = hitMat.diff;
+            buffer[x][y] = glm::clamp(color, glm::vec3(0.0f), glm::vec3(1.0f));
         } else {
             buffer[x][y] = _backgroundColor;
         }
