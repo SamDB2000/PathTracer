@@ -21,7 +21,7 @@ float Triangle::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, g
     float t = f * glm::dot(q, tmp2);
 
     hitPos = rayPos + rayDir * t;
-    normal = glm::normalize(glm::cross(v1 - v0, v2 - v0));
+    normal = glm::normalize(glm::cross(v0 - v1, v0 - v2));
     return t;
 }
 

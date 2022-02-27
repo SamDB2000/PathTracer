@@ -83,8 +83,8 @@ std::string Scene::parseQuad(std::ifstream& ifs) {
     if (verts.size() == 3)
         verts.push_back(verts[1] + verts[2] - verts[0]);
     if (verts.size() == 4) {
-        _tris.emplace_back(Triangle{ m, verts[0], verts[1], verts[2] });
-        _tris.emplace_back(Triangle{ m, verts[3], verts[2], verts[1] });
+        _tris.emplace_back(Triangle{ m, verts[2], verts[1], verts[0] });
+        _tris.emplace_back(Triangle{ m, verts[1], verts[2], verts[3] });
     }
     return str;
 }
@@ -200,13 +200,17 @@ void Scene::render(const std::string& filename) {
             glm::vec3 color = mat.amb;
             glm::vec3 shadowRayStart = hitPos + 0.01f * normal;
             for (Light& light : _lights) {
-                glm::vec3 toLight = hitPos - light.pos;
+                glm::vec3 toLight = light.pos - hitPos;
                 glm::vec3 toLightNorm = glm::normalize(toLight);
                 // Diffuse
-                color += light.diff * mat.diff * std::max(glm::dot(normal, toLightNorm), 0.0f);
-                // Specular
-                color += light.spec * mat.spec *
-                         std::pow(glm::dot(-ray, glm::reflect(toLightNorm, normal)), mat.shininess);
+                float diffuseFactor = std::max(glm::dot(normal, toLightNorm), 0.0f);
+                color += light.diff * mat.diff * diffuseFactor;
+                if (diffuseFactor > 0.0f) {
+                    // Specular
+                    color +=
+                        light.spec * mat.spec *
+                        std::pow(glm::dot(-ray, glm::reflect(toLightNorm, normal)), mat.shininess);
+                }
             }
             buffer[x][y] = glm::clamp(color, glm::vec3(0.0f), glm::vec3(1.0f));
         } else {
