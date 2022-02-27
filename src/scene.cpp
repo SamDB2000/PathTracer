@@ -41,9 +41,7 @@ std::string Scene::parseLight(std::ifstream& ifs) {
 }
 
 std::string Scene::parseSphere(std::ifstream& ifs) {
-    _mats.emplace_back();
-    Material& m = _mats.back();
-    Sphere s{ m };
+    Sphere s;
     std::string str;
     while (ifs) {
         ifs >> str;
@@ -52,7 +50,7 @@ std::string Scene::parseSphere(std::ifstream& ifs) {
         else if (str == "RADIUS")
             ifs >> s.radius;
         else if (str == "DIFF" || str == "SPEC" || str == "AMB" || str == "SHININESS")
-            parseMatProp(ifs, str, m);
+            parseMatProp(ifs, str, s.m);
         else if (str.substr(0, 2) == "//")
             std::getline(ifs, str);
         else
@@ -63,8 +61,7 @@ std::string Scene::parseSphere(std::ifstream& ifs) {
 }
 
 std::string Scene::parseQuad(std::ifstream& ifs) {
-    _mats.emplace_back();
-    Material& m = _mats.back();
+    Material m;
     std::vector<glm::vec3> verts;
     std::string str;
     while (ifs) {
@@ -93,10 +90,11 @@ std::string Scene::parseQuad(std::ifstream& ifs) {
             glm::normalize(glm::cross(_verts[i] - _verts[i + 1], _verts[i] - _verts[i + 2])));
         glm::vec3& n = _norms.back();
 
-        _tris.emplace_back(Triangle{ m, _verts[i], _verts[i + 1], _verts[i + 2], n, n, n });
-        _tris.emplace_back(Triangle{ m, _verts[i + 3], _verts[i + 1], _verts[i + 2], n, n, n });
-    } else {
-        _mats.pop_back();
+        _mats.push_back(m);
+        _tris.emplace_back(
+            Triangle{ _mats.back(), _verts[i], _verts[i + 1], _verts[i + 2], n, n, n });
+        _tris.emplace_back(
+            Triangle{ _mats.back(), _verts[i + 3], _verts[i + 1], _verts[i + 2], n, n, n });
     }
     return str;
 }
@@ -143,10 +141,11 @@ void Scene::render(const std::string& filename) {
     int height = _height * _antialias;
     std::vector<std::vector<glm::vec3>> buffer(width, std::vector<glm::vec3>(height));
 
+    float inf = std::numeric_limits<float>::infinity();
     // Camera Params
     glm::vec3 up(0.0f, 1.0f, 0.0f);
-    glm::vec3 lookAt(0.0f, 0.0f, -1.0f);
-    glm::vec3 eye(0.0f, 0.0f, 0.0f);
+    glm::vec3 lookAt(0.0f, 0.0, -1.0f);
+    glm::vec3 eye(0.0f, 0.0f, -150.0f);
 
     // Gramm-Schmidt orthonormalization
     glm::vec3 l = glm::normalize(lookAt - eye);
@@ -158,10 +157,30 @@ void Scene::render(const std::string& filename) {
     glm::vec3 ll = eye + focalLength * l - aspectRatio * v - u;
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
-            glm::vec3 p = ll + 2.0f * aspectRatio * v * ((float) x / width) +
-                          2.0f * u * ((float) y / height);
+            glm::vec3 p =
+                ll + 2.0f * aspectRatio * v * ((float) x / width) + 2.0f * u * ((float) y / height);
             glm::vec3 ray = glm::normalize(p - eye);
-            buffer[x][y] = glm::vec3(std::abs(ray.x), std::abs(ray.y), std::abs(ray.z));
+
+            float minDist = inf;
+            glm::vec3 minHitPos;
+            glm::vec3 minNormal;
+            Material hitMat;
+            for (Sphere& sphere : _spheres) {
+                glm::vec3 hitPos;
+                glm::vec3 normal;
+                float dist = sphere.raycast(eye, ray, hitPos, normal);
+                if (dist > 0.0f && dist < minDist) {
+                    minDist = dist;
+                    minHitPos = hitPos;
+                    minNormal = normal;
+                    hitMat = sphere.m;
+                }
+            }
+            if (minDist < inf) {
+                buffer[x][y] = hitMat.diff;
+            } else {
+                buffer[x][y] = glm::vec3(std::abs(ray.x), std::abs(ray.y), std::abs(ray.z));
+            }
         }
     }
 
