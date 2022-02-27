@@ -151,13 +151,12 @@ void Scene::render(const std::string& filename) {
     glm::vec3 v = glm::normalize(glm::cross(l, up));
     glm::vec3 u = glm::cross(v, l);
 
-    float aspectRatio = (float) _height / _width;
-    float focalLength = 1.0f / std::tanf(_fov / 2.0f);
-    glm::vec3 ll = eye + focalLength * l - v - aspectRatio * u;
+    float aspectRatio = (float) _width / _height;
+    float focalLength = 1.0f / glm::tan(_fov / 2.0f);
+    glm::vec3 ll = eye + focalLength * l - aspectRatio * v - u;
     for (int i = 0; i < _width; i++) {
         for (int j = 0; j < _height; j++) {
-            glm::vec3 p = ll + 2.0f * v * ((float) i / _width) +
-                          2.0f * aspectRatio * u * ((float) j / _height);
+            glm::vec3 p = ll + 2.0f * aspectRatio * v * ((float) i / _width) + 2.0f * u * ((float) j / _height);
             glm::vec3 ray = glm::normalize(p - eye);
             buffer[i][j] = glm::vec3(std::abs(ray.x), std::abs(ray.y), std::abs(ray.z));
         }
@@ -181,8 +180,8 @@ void Scene::render(const std::string& filename) {
     std::ofstream ofs(filename, std::ios::out | std::ios::binary);
     BitmapHeader bmpHead(_width, _height);
     ofs.write(bmpHead.rawData, sizeof(bmpHead));
-    for (int i = 0; i < _width; i++) {
-        for (int j = 0; j < _height; j++) {
+    for (int j = 0; j < _height; j++) {
+        for (int i = 0; i < _width; i++) {
             glm::vec3 color = buffer[i][j];
             uint8_t r = (uint8_t)(255 * color.r);
             uint8_t g = (uint8_t)(255 * color.g);
