@@ -25,7 +25,7 @@ float Sphere::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm
     else
         return 0;
 
-    hitPos = rayPos + t * rayDir;
+    hitPos = rayPos + rayDir * t;
     normal = glm::normalize(pos - hitPos);
     return t;
 }

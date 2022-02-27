@@ -180,7 +180,7 @@ void Scene::render(const std::string& filename) {
             if (minDist < inf) {
                 buffer[x][y] = hitMat.diff;
             } else {
-                buffer[x][y] = glm::vec3(std::abs(ray.x), std::abs(ray.y), std::abs(ray.z));
+                buffer[x][y] = _backgroundColor;
             }
         }
     }
