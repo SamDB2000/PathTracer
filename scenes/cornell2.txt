@@ -1,18 +1,27 @@
 // Cornell Box for RayTracer
-ANTIALIAS 3
+ANTIALIAS 2
 BACKGROUND 0 0 0        // Background color
-MAXDEPTH 10              // Raytracing depth
+MAXDEPTH 2              // Raytracing depth
 LIGHT
     POS 100 20 100
-    DIFF 0.7 0.7 0.7    //white light
-    SPEC 0.7 0.7 0.7    //full  white specular
+    DIFF 0.5 0.5 0.5    //white light
+    SPEC 0.5 0.5 0.5    //full  white specular
 
-SPHERE
-    POS 0 0 0 RADIUS 45
-    AMB 0.1 0.1 0.1
-    DIFF 1.0 1.0 1.0    //some diffuse
-    SPEC 0.1 0.1 0.1    //perfect mirror
-    SHININESS 1.0      // Shininess coefficient
+//SPHERE
+//    POS 0 0 0 RADIUS 45
+//    AMB 0.1 0.1 0.1
+//    DIFF 1.0 1.0 1.0    //some diffuse
+//    SPEC 0.1 0.1 0.1    //perfect mirror
+//    SHININESS 1.0      // Shininess coefficient
+
+// Goose Hydra model by mz4250, modified by me
+// https://www.shapeways.com/product/HKJCV67W6/goose-hydra
+MODEL
+    STL models/GooseHydra.stl
+    AMB 0.19125 0.0735 0.0225
+    DIFF 0.7038 0.27048 0.0828
+    SPEC 0.256777 0.137622 0.086014
+    SHININESS 12.8
 
 // Back Face
 QUAD
@@ -59,4 +68,4 @@ QUAD
     SPEC 1.0 1.0 1.0
     SHININESS 10.0 
 
-RESOLUTION 800 800  //image resolution
+RESOLUTION 400 400  //image resolution

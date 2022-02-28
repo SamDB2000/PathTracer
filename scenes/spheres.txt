@@ -1,7 +1,7 @@
 ANTIALIAS 3
 MAXDEPTH 17              // Raytracing depth
 LIGHT
-    POS 0 150 -100
+    POS 0 150 100
     DIFF 1.0 1.0 1.0 	//white light
     SPEC 1.0 1.0 1.0	//full  white specular
 

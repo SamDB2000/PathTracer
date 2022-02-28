@@ -28,6 +28,7 @@ private:
     std::string parseLight(std::ifstream& ifs);
     std::string parseSphere(std::ifstream& ifs);
     std::string parseQuad(std::ifstream& ifs);
+    std::string parseModel(std::ifstream& ifs);
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal,
                   Material& mat);
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir);

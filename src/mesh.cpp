@@ -1,4 +1,5 @@
 #include <mesh.h>
+#include <fstream>
 
 namespace dng {
 
@@ -20,6 +21,28 @@ float Mesh::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::
         return minDist;
     else
         return 0.0f;
+}
+
+void Mesh::loadStl(std::string filename) {
+    std::ifstream ifs(filename, std::ios::in | std::ios::binary);
+    char header[80];
+    ifs.read(header, sizeof(header));
+    uint32_t numTris;
+    ifs.read((char*) (&numTris), sizeof(uint32_t));
+
+    tris.clear();
+    tris.reserve(numTris);
+    for (int i = 0; i < numTris; i++) {
+        glm::vec3 normal;
+        Triangle t;
+        uint16_t attrib;
+        ifs.read((char*) (&normal), sizeof(glm::vec3));
+        ifs.read((char*) (&t.v0), sizeof(glm::vec3));
+        ifs.read((char*) (&t.v1), sizeof(glm::vec3));
+        ifs.read((char*) (&t.v2), sizeof(glm::vec3));
+        ifs.read((char*) (&attrib), sizeof(attrib));
+        tris.push_back(t);
+    }
 }
 
 }  // namespace dng

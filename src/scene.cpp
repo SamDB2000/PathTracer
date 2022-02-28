@@ -3,6 +3,8 @@
 #include <sstream>
 #include <bitmap_header.h>
 #include <omp.h>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/euler_angles.hpp>
 
 namespace dng {
 
@@ -92,6 +94,26 @@ std::string Scene::parseQuad(std::ifstream& ifs) {
     return str;
 }
 
+std::string Scene::parseModel(std::ifstream& ifs) {
+    Mesh m;
+    std::string str;
+    while (ifs) {
+        ifs >> str;
+        if (str == "STL") {
+            ifs >> str;
+            m.loadStl(str);
+        } else if (str == "DIFF" || str == "SPEC" || str == "AMB" || str == "SHININESS") {
+            parseMatProp(ifs, str, m.m);
+        } else if (str.substr(0, 2) == "//") {
+            std::getline(ifs, str);
+        } else {
+            break;
+        }
+    }
+    _meshes.push_back(m);
+    return str;
+}
+
 Scene::Scene(const std::string& filename)
     : _backgroundColor(0.1f, 0.1f, 0.1f),
       _maxDepth(4),
@@ -110,6 +132,8 @@ Scene::Scene(const std::string& filename)
             str = parseSphere(ifs);
         else if (str == "QUAD")
             str = parseQuad(ifs);
+        else if (str == "MODEL")
+            str = parseModel(ifs);
         else if (str == "BACKGROUND")
             ifs >> _backgroundColor.r >> _backgroundColor.g >> _backgroundColor.b >> str;
         else if (str == "ANTIALIAS")
@@ -234,10 +258,12 @@ void Scene::render(const std::string& filename) {
 
 #pragma omp atomic
         completed++;
-        if ((100 * completed) % (width * height) == 0) {
-            int percent = 100 * completed / (width * height);
+        if (completed % 500 == 0) {
+            int progress = 10000 * completed / (width * height);
+            int per = progress / 100;
+            int dec = progress % 100;
 #pragma omp critical
-            std::cout << "\rRendering " << percent << "% complete";
+            std::cout << "\rRendering " << per << "." << dec << "% complete  " << std::flush;
         }
     }
     std::cout << "\rRendering 100% complete. Writing to " << filename << '\n';
@@ -265,9 +291,13 @@ void Scene::render(const std::string& filename) {
 }
 
 std::ostream& operator<<(std::ostream& os, Scene& s) {
+    long triCount = 0;
+    for (Mesh& mesh : s._meshes)
+        triCount += mesh.tris.size();
     os << "[Scene resolution=" << s._width << "x" << s._height << " antialias=" << s._antialias
        << " maxDepth=" << s._maxDepth << " | " << s._lights.size() << " lights, "
-       << s._spheres.size() << " spheres, " << s._meshes.size() << " meshes]";
+       << s._spheres.size() << " spheres, " << s._meshes.size() << " meshes, " << triCount
+       << " triangles]";
     return os;
 }
 
