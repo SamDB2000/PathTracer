@@ -9,7 +9,7 @@
 #include <sphere.h>
 #include <mesh.h>
 
-namespace dng {
+namespace path_tracer {
 
 class Scene {
 private:
@@ -40,6 +40,6 @@ public:
     friend std::ostream& operator<<(std::ostream& os, Scene& s);
 };
 
-}  // namespace dng
+}  // namespace path_tracer
 
 #endif  //  __SCENE_H__

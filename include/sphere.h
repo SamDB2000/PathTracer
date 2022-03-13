@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 #include <material.h>
 
-namespace dng {
+namespace path_tracer {
 
 struct Sphere {
     Material m;
@@ -14,6 +14,6 @@ struct Sphere {
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal);
 };
 
-}  // namespace dng
+}  // namespace path_tracer
 
 #endif  //  __SPHERE_H__

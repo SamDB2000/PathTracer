@@ -3,7 +3,7 @@
 
 #include <glm/glm.hpp>
 
-namespace dng {
+namespace path_tracer {
 
 struct Material {
     glm::vec3 diff{ 1.0f, 1.0f, 1.0f };
@@ -12,6 +12,6 @@ struct Material {
     glm::vec3 amb{ 0.0f, 0.0f, 0.0f };
 };
 
-}  // namespace dng
+}  // namespace path_tracer
 
 #endif  //  __MATERIAL_H__

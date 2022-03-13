@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 #include <material.h>
 
-namespace dng {
+namespace path_tracer {
 
 struct Triangle {
     Material m;
@@ -15,6 +15,6 @@ struct Triangle {
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal);
 };
 
-}  // namespace dng
+}  // namespace path_tracer
 
 #endif  //  __TRIANGLE_H__

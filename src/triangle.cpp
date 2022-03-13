@@ -1,6 +1,6 @@
 #include <triangle.h>
 
-namespace dng {
+namespace path_tracer {
 
 float Triangle::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal) {
     glm::vec3 p = v1 - v0;
@@ -25,4 +25,4 @@ float Triangle::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, g
     return t;
 }
 
-}  // namespace dng
+}  // namespace path_tracer

@@ -3,7 +3,7 @@
 
 #include <glm/glm.hpp>
 
-namespace dng {
+namespace path_tracer {
 
 struct Light {
     glm::vec3 pos{ 0.0f, 0.0f, 0.0f };
@@ -11,6 +11,6 @@ struct Light {
     glm::vec3 spec{ 0.55f, 0.55f, 0.55f };
 };
 
-}  // namespace dng
+}  // namespace path_tracer
 
 #endif  //  __LIGHT_H__

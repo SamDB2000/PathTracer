@@ -3,7 +3,7 @@
 
 #include <cinttypes>
 
-namespace dng {
+namespace path_tracer {
 
 #pragma pack(1)
 union BitmapHeader {
@@ -49,6 +49,6 @@ union BitmapHeader {
     }
 };
 
-}  // namespace dng
+}  // namespace path_tracer
 
 #endif  // __BITMAP_HEADER_H__

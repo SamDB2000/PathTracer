@@ -7,7 +7,7 @@
 #include <material.h>
 #include <triangle.h>
 
-namespace dng {
+namespace path_tracer {
 
 struct Mesh {
     Material m;
@@ -17,6 +17,6 @@ struct Mesh {
     void loadStl(std::string filename);
 };
 
-}  // namespace dng
+}  // namespace path_tracer
 
 #endif  //  __MESH_H__

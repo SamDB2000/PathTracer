@@ -11,7 +11,7 @@ int main(int argc, char const* argv[]) {
         return 1;
     }
 
-    dng::Scene scene(argv[1]);
+    path_tracer::Scene scene(argv[1]);
     std::cout << scene << '\n';
     scene.render(argv[2]);
 

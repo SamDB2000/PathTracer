@@ -1,6 +1,6 @@
 #include <sphere.h>
 
-namespace dng {
+namespace path_tracer {
 
 float Sphere::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal) {
     glm::vec3 v = pos - rayPos;
@@ -29,4 +29,4 @@ float Sphere::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm
     return t;
 }
 
-}  // namespace dng
+}  // namespace path_tracer

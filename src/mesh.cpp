@@ -1,7 +1,7 @@
 #include <mesh.h>
 #include <fstream>
 
-namespace dng {
+namespace path_tracer {
 
 float Mesh::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal) {
     float minDist = std::numeric_limits<float>::infinity();
@@ -45,4 +45,4 @@ void Mesh::loadStl(std::string filename) {
     }
 }
 
-}  // namespace dng
+}  // namespace path_tracer

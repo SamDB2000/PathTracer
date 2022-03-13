@@ -6,7 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/euler_angles.hpp>
 
-namespace dng {
+namespace path_tracer {
 
 void Scene::readVec(std::ifstream& ifs, glm::vec3& vec) {
     ifs >> vec.x >> vec.y >> vec.z;
@@ -301,4 +301,4 @@ std::ostream& operator<<(std::ostream& os, Scene& s) {
     return os;
 }
 
-}  // namespace dng
+}  // namespace path_tracer
