@@ -279,6 +279,7 @@ void Scene::render(const std::string& filename) {
                 for (int c = 0; c < _antialias; c++)
                     color += buffer[_antialias * j + r][_antialias * i + c];
             color /= _antialias * _antialias;
+            color = glm::clamp(color, glm::vec3(0.0f), glm::vec3(1.0f));
             uint8_t r = (uint8_t)(255 * color.r);
             uint8_t g = (uint8_t)(255 * color.g);
             uint8_t b = (uint8_t)(255 * color.b);
