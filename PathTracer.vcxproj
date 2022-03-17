@@ -87,7 +87,7 @@
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>./deps/glm/; ./include/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./deps/glm/; ./include/; ./deps/pugixml-1.12/src/</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
@@ -103,7 +103,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>./deps/glm; ./include/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./deps/glm; ./include/; ./deps/pugixml-1.12/src/</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
@@ -115,6 +115,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="deps/pugixml-1.12/src/pugixml.cpp" />
     <ClCompile Include="src/main.cpp" />
     <ClCompile Include="src/mesh.cpp" />
     <ClCompile Include="src/scene.cpp" />
@@ -122,12 +123,14 @@
     <ClCompile Include="src/triangle.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\bitmap_header.h" />
-    <ClInclude Include="include\light.h" />
-    <ClInclude Include="include\material.h" />
-    <ClInclude Include="include\scene.h" />
-    <ClInclude Include="include\sphere.h" />
-    <ClInclude Include="include\triangle.h" />
+    <ClInclude Include="deps/pugixml-1.12/src/pugiconfig.hpp" />
+    <ClInclude Include="deps/pugixml-1.12/src/pugixml.hpp" />
+    <ClInclude Include="include/bitmap_header.h" />
+    <ClInclude Include="include/light.h" />
+    <ClInclude Include="include/material.h" />
+    <ClInclude Include="include/scene.h" />
+    <ClInclude Include="include/sphere.h" />
+    <ClInclude Include="include/triangle.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
