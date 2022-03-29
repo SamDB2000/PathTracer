@@ -116,6 +116,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="deps/pugixml-1.12/src/pugixml.cpp" />
+    <ClCompile Include="src/bounding_volume.cpp" />
     <ClCompile Include="src/main.cpp" />
     <ClCompile Include="src/mesh.cpp" />
     <ClCompile Include="src/scene.cpp" />
@@ -126,6 +127,7 @@
     <ClInclude Include="deps/pugixml-1.12/src/pugiconfig.hpp" />
     <ClInclude Include="deps/pugixml-1.12/src/pugixml.hpp" />
     <ClInclude Include="include/bitmap_header.h" />
+    <ClInclude Include="include/bounding_volume.h" />
     <ClInclude Include="include/light.h" />
     <ClInclude Include="include/material.h" />
     <ClInclude Include="include/scene.h" />

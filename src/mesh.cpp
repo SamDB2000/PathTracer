@@ -6,6 +6,8 @@ namespace path_tracer {
 float Mesh::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal) {
     float minDist = std::numeric_limits<float>::infinity();
     bool hit = false;
+
+    // TODO: Replace with BVH walk
     for (Triangle& tri : tris) {
         glm::vec3 localHitPos;
         glm::vec3 localNormal;
