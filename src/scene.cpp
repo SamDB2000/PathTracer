@@ -298,6 +298,8 @@ void Scene::generateBvh() {
     for (auto& mesh : _meshes)
         for (auto& tri : mesh.tris)
             bvs.push_back(std::make_unique<BoundingVolume>(&tri));
+    if (bvs.size() == 0)
+        return;
     while (bvs.size() > 1) {
         BoundingVolume::Ptr bv0 = std::move(bvs.front());
         bvs.pop_front();
@@ -310,11 +312,10 @@ void Scene::generateBvh() {
 }
 
 void Scene::exportBvh(std::ostream& os) {
-    if (!_bvh)
-        return;
     pugi::xml_document doc;
     pugi::xml_node root = doc.append_child("bvh");
-    _bvh->toXml(root);
+    if (_bvh)
+        _bvh->toXml(root);
     doc.print(os, "  ");
 }
 
