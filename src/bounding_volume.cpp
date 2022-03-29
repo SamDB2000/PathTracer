@@ -13,8 +13,7 @@ BoundingVolume::BoundingVolume(Triangle* tri)
     _max.z = std::max({ tri->v0.z, tri->v1.z, tri->v2.z });
 }
 
-BoundingVolume::BoundingVolume(std::unique_ptr<BoundingVolume> bv0,
-                               std::unique_ptr<BoundingVolume> bv1)
+BoundingVolume::BoundingVolume(Ptr bv0, Ptr bv1)
     : _isRoot(true), _isLeaf(false), _children{ std::move(bv0), std::move(bv1) }, _tri{ nullptr } {
     _children[0]->_isRoot = false;
     _children[1]->_isRoot = false;

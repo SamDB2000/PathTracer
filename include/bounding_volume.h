@@ -9,8 +9,10 @@ namespace path_tracer {
 
 class BoundingVolume {
 public:
+    typedef std::unique_ptr<BoundingVolume> Ptr;
+
     BoundingVolume(Triangle* tri);
-    BoundingVolume(std::unique_ptr<BoundingVolume> bv0, std::unique_ptr<BoundingVolume> bv1);
+    BoundingVolume(Ptr bv0, Ptr bv1);
 
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal);
 
@@ -19,7 +21,7 @@ private:
     glm::vec3 _max;
     bool _isRoot;
     bool _isLeaf;
-    std::unique_ptr<BoundingVolume> _children[2];
+    Ptr _children[2];
     Triangle* _tri;
 };
 

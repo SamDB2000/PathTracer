@@ -87,9 +87,8 @@ std::string Scene::parseQuad(std::ifstream& ifs) {
     if (verts.size() == 3)
         verts.push_back(verts[1] + verts[2] - verts[0]);
     if (verts.size() == 4) {
-        _meshes.emplace_back(Mesh{ m,
-                                   { Triangle{ m, verts[2], verts[1], verts[0] },
-                                     Triangle{ m, verts[1], verts[2], verts[3] } } });
+        _meshes.emplace_back(m, std::vector<Triangle>{ { m, verts[2], verts[1], verts[0] },
+                                                       { m, verts[1], verts[2], verts[3] } });
     }
     return str;
 }
@@ -111,6 +110,7 @@ std::string Scene::parseModel(std::ifstream& ifs) {
         }
     }
     _meshes.push_back(m);
+    _meshes.back().generateBVH();
     return str;
 }
 

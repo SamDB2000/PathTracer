@@ -15,9 +15,15 @@
   "tasks": [
     {
       "type": "shell",
-      "label": "msbuild",
+      "label": "msbuild (Debug)",
       "command": "msbuild.exe",
-      "group": "build",
+      "args": [
+        "/m"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
       "problemMatcher": []
     },
     {
@@ -25,12 +31,10 @@
       "label": "msbuild (Release)",
       "command": "msbuild.exe",
       "args": [
-        "/property:Configuration=Release"
+        "/property:Configuration=Release",
+        "/m"
       ],
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
+      "group": "build",
       "problemMatcher": []
     }
   ]

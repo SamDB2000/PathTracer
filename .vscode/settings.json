@@ -2,6 +2,7 @@
   "clang-format.executable": "C:\\Program Files\\LLVM\\bin\\clang-format.exe",
   "files.associations": {
     "*.vcxproj": "xml",
+    "config": "properties",
     "fstream": "cpp",
     "vector": "cpp",
     "iostream": "cpp",
@@ -68,6 +69,10 @@
     "xlocmes": "cpp",
     "xlocmon": "cpp",
     "xloctime": "cpp",
-    "xtree": "cpp"
+    "xtree": "cpp",
+    "functional": "cpp",
+    "list": "cpp",
+    "unordered_map": "cpp",
+    "xhash": "cpp"
   },
 }
