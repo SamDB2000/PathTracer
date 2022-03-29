@@ -4,15 +4,14 @@
 
 namespace path_tracer {
 
-Mesh::Mesh(const std::string& filename) : _bvh(nullptr) {
+Mesh::Mesh(const std::string& filename) {
     loadStl(filename);
 }
 
-Mesh::Mesh(Material m, const std::vector<Triangle>& tris) : m(m), tris(tris), _bvh(nullptr) {
+Mesh::Mesh(Material m, const std::vector<Triangle>& tris) : m(m), tris(tris) {
 }
 
-Mesh::Mesh(const Mesh& mesh)
-    : m(mesh.m), tris(mesh.tris), _bvh(nullptr) {
+Mesh::Mesh(const Mesh& mesh) : m(mesh.m), tris(mesh.tris) {
 }
 
 float Mesh::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal) {
@@ -60,23 +59,6 @@ void Mesh::loadStl(const std::string& filename) {
         ifs.read((char*) (&attrib), sizeof(attrib));
         tris.push_back(t);
     }
-}
-
-void Mesh::generateBVH() {
-    if (_bvh)
-        return;
-    std::list<BoundingVolume::Ptr> bvs;
-    for (auto& tri : tris)
-        bvs.push_back(std::make_unique<BoundingVolume>(&tri));
-    while (bvs.size() > 1) {
-        BoundingVolume::Ptr bv0 = std::move(bvs.front());
-        bvs.pop_front();
-        BoundingVolume::Ptr bv1 = std::move(bvs.front());
-        bvs.pop_front();
-        bvs.push_back(std::make_unique<BoundingVolume>(std::move(bv0), std::move(bv1)));
-    }
-    _bvh = std::move(bvs.front());
-    bvs.pop_front();
 }
 
 }  // namespace path_tracer

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <scene.h>
+#include <fstream>
 
 int main(int argc, char const* argv[]) {
     if (argc != 3) {
@@ -13,6 +14,12 @@ int main(int argc, char const* argv[]) {
 
     path_tracer::Scene scene(argv[1]);
     std::cout << scene << '\n';
+    scene.generateBvh();
+
+    std::ofstream ofs(argv[2] + std::string(".bvh"));
+    scene.exportBvh(ofs);
+    ofs.close();
+
     scene.render(argv[2]);
 
     return 0;

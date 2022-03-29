@@ -1,10 +1,11 @@
 #include <scene.h>
-#include <fstream>
-#include <sstream>
 #include <bitmap_header.h>
 #include <omp.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/euler_angles.hpp>
+#include <fstream>
+#include <sstream>
+#include <list>
 
 namespace path_tracer {
 
@@ -110,7 +111,6 @@ std::string Scene::parseModel(std::ifstream& ifs) {
         }
     }
     _meshes.push_back(m);
-    _meshes.back().generateBVH();
     return str;
 }
 
@@ -289,6 +289,33 @@ void Scene::render(const std::string& filename) {
         }
     }
     std::cout << "Done writing\n";
+}
+
+void Scene::generateBvh() {
+    if (_bvh)
+        return;
+    std::list<BoundingVolume::Ptr> bvs;
+    for (auto& mesh : _meshes)
+        for (auto& tri : mesh.tris)
+            bvs.push_back(std::make_unique<BoundingVolume>(&tri));
+    while (bvs.size() > 1) {
+        BoundingVolume::Ptr bv0 = std::move(bvs.front());
+        bvs.pop_front();
+        BoundingVolume::Ptr bv1 = std::move(bvs.front());
+        bvs.pop_front();
+        bvs.push_back(std::make_unique<BoundingVolume>(std::move(bv0), std::move(bv1)));
+    }
+    _bvh = std::move(bvs.front());
+    bvs.pop_front();
+}
+
+void Scene::exportBvh(std::ostream& os) {
+    if (!_bvh)
+        return;
+    pugi::xml_document doc;
+    pugi::xml_node root = doc.append_child("bvh");
+    _bvh->toXml(root);
+    doc.print(os, "  ");
 }
 
 std::ostream& operator<<(std::ostream& os, Scene& s) {

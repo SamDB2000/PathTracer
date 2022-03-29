@@ -2,6 +2,7 @@
 #define __BOUNDING_VOLUME_H__
 
 #include <glm/glm.hpp>
+#include <pugixml.hpp>
 #include <memory>
 #include <triangle.h>
 
@@ -15,6 +16,7 @@ public:
     BoundingVolume(Ptr bv0, Ptr bv1);
 
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal);
+    void toXml(pugi::xml_node& root);
 
 private:
     glm::vec3 _min;

@@ -8,6 +8,7 @@
 #include <material.h>
 #include <sphere.h>
 #include <mesh.h>
+#include <bounding_volume.h>
 
 namespace path_tracer {
 
@@ -22,6 +23,7 @@ private:
     std::vector<Light> _lights;
     std::vector<Sphere> _spheres;
     std::vector<Mesh> _meshes;
+    BoundingVolume::Ptr _bvh;
 
     void readVec(std::ifstream& ifs, glm::vec3& vec);
     void parseMatProp(std::ifstream& ifs, const std::string& str, Material& m);
@@ -37,6 +39,8 @@ private:
 public:
     Scene(const std::string& filename);
     void render(const std::string& filename);
+    void generateBvh();
+    void exportBvh(std::ostream& os);
     friend std::ostream& operator<<(std::ostream& os, Scene& s);
 };
 
