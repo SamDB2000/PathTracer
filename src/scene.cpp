@@ -9,6 +9,10 @@
 
 namespace path_tracer {
 
+uint64_t numRayTriangleTests = 0;
+uint64_t numRayTriangleIntersections = 0;
+uint64_t numPrimaryRays = 0;
+
 void Scene::readVec(std::ifstream& ifs, glm::vec3& vec) {
     ifs >> vec.x >> vec.y >> vec.z;
 }
@@ -102,7 +106,7 @@ std::string Scene::parseQuad(std::ifstream& ifs) {
             if (min_z > verts[i].z) min_z = verts[i].z;
         }
         
-        AABB box = AABB(glm::vec3(min_x, min_y, min_z), glm::vec3(min_x, min_y, min_z));
+        AABB box = AABB(glm::vec3(min_x, min_y, min_z), glm::vec3(max_x, max_y, max_z));
         
         _meshes.emplace_back(Mesh{ m, box,
                                    { Triangle{ m, verts[2], verts[1], verts[0] },
@@ -292,6 +296,8 @@ void Scene::render(const std::string& filename) {
     clock_t timeEnd = clock();
     std::cout << "\rRendering 100% complete. Writing to " << filename << '\n';
     std::cout << "Render time: " << (float) (timeEnd - timeStart) / CLOCKS_PER_SEC << " (sec)\n";
+    std::cout << "Number of Ray Triangle Tests Called:    " << numRayTriangleTests << "\n";
+    std::cout << "Number of Ray Triangle Tests Initiated: " << numRayTriangleIntersections << "\n";
 
     // Write bmp header
     std::ofstream ofs(filename, std::ios::out | std::ios::binary);

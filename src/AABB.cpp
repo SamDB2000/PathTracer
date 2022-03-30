@@ -31,7 +31,7 @@ bool AABB::intersect(glm::vec3 rayPos, glm::vec3 rayDir) {
         tx_max = ty_max; 
 	}
 
-	// Find the y intersection for the closer and further z lines
+	// Find the z intersection for the closer and further z lines
 	float tz_min = (min.z - rayPos.z) / rayDir.z;
     float tz_max = (max.z - rayPos.z) / rayDir.z;
     if (tz_min > tz_max) std::swap(tz_min, tz_max);

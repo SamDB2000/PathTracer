@@ -1,16 +1,23 @@
 #include <mesh.h>
 #include <fstream>
 #include <iostream>
+#include <atomic>
 
 namespace path_tracer {
+
+extern uint64_t numRayTriangleTests;
+extern uint64_t numRayTriangleIntersections;
 
 float Mesh::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal) {
     float minDist = std::numeric_limits<float>::infinity();
     bool hit = false;
 
+    numRayTriangleTests++;
     if (AABbox.intersect(rayPos, rayDir)) {
+        numRayTriangleIntersections++;
         // This seems to infer it works since that prints very often.
         //std::cout << "intersection found in AABB\n";
+        
         // TODO: Replace with BVH walk
         for (Triangle& tri : tris) {
             glm::vec3 localHitPos;
