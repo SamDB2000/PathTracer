@@ -1,4 +1,5 @@
 #include <iostream>
+#include <ctime>
 #include <scene.h>
 #include <fstream>
 
@@ -33,6 +34,5 @@ int main(int argc, char const* argv[]) {
     }
 
     scene.render(outFile);
-
     return 0;
 }

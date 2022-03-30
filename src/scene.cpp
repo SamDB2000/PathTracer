@@ -1,6 +1,7 @@
 #include <scene.h>
 #include <bitmap_header.h>
 #include <omp.h>
+#include <ctime>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/euler_angles.hpp>
 #include <fstream>
@@ -153,6 +154,7 @@ glm::vec3 Scene::raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter) {
 }
 
 void Scene::render(const std::string& filename) {
+    clock_t timeStart = clock();
     int width = _width * _antialias;
     int height = _height * _antialias;
     std::vector<std::vector<glm::vec3>> buffer(width, std::vector<glm::vec3>(height));
@@ -187,7 +189,9 @@ void Scene::render(const std::string& filename) {
             std::cout << "\rRendering " << per << "." << dec << "% complete  " << std::flush;
         }
     }
+    clock_t timeEnd = clock();
     std::cout << "\rRendering 100% complete. Writing to " << filename << '\n';
+    std::cout << "Render time: " << (float) (timeEnd - timeStart) / CLOCKS_PER_SEC << " (sec)\n";
 
     // Write bmp header
     std::ofstream ofs(filename, std::ios::out | std::ios::binary);
@@ -209,7 +213,7 @@ void Scene::render(const std::string& filename) {
             ofs.write((char*) &r, sizeof(uint8_t));
         }
     }
-    std::cout << "Done writing\n";
+    std::cout << "Done writing\n";   
 }
 
 void Scene::generateBvh() {

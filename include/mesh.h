@@ -6,11 +6,14 @@
 #include <string>
 #include <material.h>
 #include <triangle.h>
+#include <AABB.h>
 
 namespace path_tracer {
 
 struct Mesh {
     Material m;
+    //glm::vec3 bounds[2];
+    AABB AABbox;
     std::vector<Triangle> tris;
     std::string filename = "";
 
