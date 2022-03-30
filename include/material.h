@@ -13,6 +13,7 @@ struct Material {
     glm::vec3 amb{ 0.0f, 0.0f, 0.0f };
 
     pugi::xml_node toXml(pugi::xml_node& root);
+    static Material fromXml(pugi::xml_node node);
 };
 
 }  // namespace path_tracer

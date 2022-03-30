@@ -71,7 +71,7 @@ pugi::xml_node Mesh::toXml(pugi::xml_node& root) {
         pugi::xml_node trisNode = node.append_child("tris");
         for (auto& tri : tris) {
             pugi::xml_node triNode = trisNode.append_child("tri");
-            
+
             pugi::xml_node v;
             v = triNode.append_child("v");
             v.append_attribute("x") = tri.v0.x;
@@ -93,5 +93,65 @@ pugi::xml_node Mesh::toXml(pugi::xml_node& root) {
     return node;
 }
 
+Mesh Mesh::fromXml(pugi::xml_node node) {
+    Mesh mesh;
+    std::string type = node.attribute("type").value();
+    if (type == "stl") {
+        mesh.loadStl(node.attribute("filename").value());
+    } else if (type == "quad") {
+        std::vector<glm::vec3> verts;
+        verts.reserve(4);
+        pugi::xml_node vertsNode = node.child("verts");
+        for (auto& vert : vertsNode.children()) {
+            if (std::string(vert.name()) != "v")
+                continue;
+            glm::vec3 v;
+            v.x = vert.attribute("x").as_float();
+            v.y = vert.attribute("y").as_float();
+            v.z = vert.attribute("z").as_float();
+            verts.push_back(v);
+        }
+        if (verts.size() == 3)
+            verts.push_back(verts[1] + verts[2] - verts[0]);
+        if (verts.size() == 4) {
+            Triangle t;
+            t.v0 = verts[2];
+            t.v1 = verts[1];
+            t.v2 = verts[0];
+            mesh.tris.push_back(t);
+
+            t.v0 = verts[1];
+            t.v1 = verts[2];
+            t.v2 = verts[3];
+            mesh.tris.push_back(t);
+        }
+    } else {
+        pugi::xml_node trisNode = node.child("tris");
+        for (auto& triNode : trisNode.children()) {
+            if (triNode.name() != "tri")
+                continue;
+            Triangle tri;
+            auto vt = triNode.children("v").begin();
+            tri.v0.x = vt->attribute("x").as_float();
+            tri.v0.y = vt->attribute("y").as_float();
+            tri.v0.z = vt->attribute("z").as_float();
+
+            vt++;
+            tri.v1.x = vt->attribute("x").as_float();
+            tri.v1.y = vt->attribute("y").as_float();
+            tri.v1.z = vt->attribute("z").as_float();
+
+            vt++;
+            tri.v2.x = vt->attribute("x").as_float();
+            tri.v2.y = vt->attribute("y").as_float();
+            tri.v2.z = vt->attribute("z").as_float();
+        }
+    }
+    Material mat = Material::fromXml(node.child("material"));
+    mesh.m = mat;
+    for (auto& tri : mesh.tris)
+        tri.m = mat;
+    return mesh;
+}
 
 }  // namespace path_tracer

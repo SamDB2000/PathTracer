@@ -26,4 +26,26 @@ pugi::xml_node Material::toXml(pugi::xml_node& root) {
     return node;
 }
 
+Material Material::fromXml(pugi::xml_node node) {
+    Material m;
+    pugi::xml_node diffNode = node.child("diff");
+    m.diff.r = diffNode.attribute("r").as_float();
+    m.diff.g = diffNode.attribute("g").as_float();
+    m.diff.b = diffNode.attribute("b").as_float();
+
+    pugi::xml_node specNode = node.child("spec");
+    m.spec.r = specNode.attribute("r").as_float();
+    m.spec.g = specNode.attribute("g").as_float();
+    m.spec.b = specNode.attribute("b").as_float();
+
+    pugi::xml_node shininessNode = node.child("shininess");
+    m.shininess = shininessNode.attribute("value").as_float();
+
+    pugi::xml_node ambNode = node.child("amb");
+    m.amb.r = ambNode.attribute("r").as_float();
+    m.amb.g = ambNode.attribute("g").as_float();
+    m.amb.b = ambNode.attribute("b").as_float();
+    return m;
+}
+
 }  // namespace path_tracer

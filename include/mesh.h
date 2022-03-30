@@ -20,6 +20,7 @@ struct Mesh {
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal);
     void loadStl(const std::string& filename);
     pugi::xml_node toXml(pugi::xml_node& root);
+    static Mesh fromXml(pugi::xml_node node);
 };
 
 }  // namespace path_tracer

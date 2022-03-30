@@ -6,126 +6,9 @@
 #include <fstream>
 #include <sstream>
 #include <list>
+#include <iostream>
 
 namespace path_tracer {
-
-void Scene::readVec(std::ifstream& ifs, glm::vec3& vec) {
-    ifs >> vec.x >> vec.y >> vec.z;
-}
-
-void Scene::parseMatProp(std::ifstream& ifs, const std::string& str, Material& m) {
-    if (str == "DIFF")
-        readVec(ifs, m.diff);
-    else if (str == "SPEC")
-        readVec(ifs, m.spec);
-    else if (str == "AMB")
-        readVec(ifs, m.amb);
-    else if (str == "SHININESS")
-        ifs >> m.shininess;
-}
-
-std::string Scene::parseLight(std::ifstream& ifs, pugi::xml_node& root) {
-    Light l;
-    std::string str;
-    while (ifs) {
-        ifs >> str;
-        if (str == "POS")
-            readVec(ifs, l.pos);
-        else if (str == "DIFF")
-            readVec(ifs, l.diff);
-        else if (str == "SPEC")
-            readVec(ifs, l.spec);
-        else if (str.substr(0, 2) == "//")
-            std::getline(ifs, str);
-        else
-            break;
-    }
-    l.toXml(root);
-    _lights.push_back(l);
-    // _spheres.push_back(Sphere{
-    //     Material{ glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, glm::vec3(l.diff) }, l.pos, 10.0f });
-    return str;
-}
-
-std::string Scene::parseSphere(std::ifstream& ifs, pugi::xml_node& root) {
-    Sphere s;
-    std::string str;
-    while (ifs) {
-        ifs >> str;
-        if (str == "POS")
-            readVec(ifs, s.pos);
-        else if (str == "RADIUS")
-            ifs >> s.radius;
-        else if (str == "DIFF" || str == "SPEC" || str == "AMB" || str == "SHININESS")
-            parseMatProp(ifs, str, s.m);
-        else if (str.substr(0, 2) == "//")
-            std::getline(ifs, str);
-        else
-            break;
-    }
-    s.toXml(root);
-    _spheres.push_back(s);
-    return str;
-}
-
-std::string Scene::parseQuad(std::ifstream& ifs, pugi::xml_node& root) {
-    Material m;
-    std::vector<glm::vec3> verts;
-    verts.reserve(4);
-    std::string str;
-    while (ifs) {
-        ifs >> str;
-        if (str == "POS") {
-            glm::vec3 v;
-            readVec(ifs, v);
-            verts.push_back(v);
-        } else if (str == "DIFF" || str == "SPEC" || str == "AMB" || str == "SHININESS") {
-            parseMatProp(ifs, str, m);
-        } else if (str.substr(0, 2) == "//") {
-            std::getline(ifs, str);
-        } else {
-            break;
-        }
-    }
-    if (verts.size() == 3)
-        verts.push_back(verts[1] + verts[2] - verts[0]);
-    if (verts.size() == 4) {
-        _meshes.emplace_back(m, std::vector<Triangle>{ { m, verts[2], verts[1], verts[0] },
-                                                       { m, verts[1], verts[2], verts[3] } });
-        pugi::xml_node node = _meshes.back().toXml(root);
-        node.remove_child("tris");
-        node.append_attribute("type") = "quad";
-        pugi::xml_node vertsNode = node.append_child("verts");
-        for (int i = 0; i < 3; i++) {
-            pugi::xml_node v = vertsNode.append_child("v");
-            v.append_attribute("x") = verts[i].x;
-            v.append_attribute("y") = verts[i].y;
-            v.append_attribute("z") = verts[i].z;
-        }
-    }
-    return str;
-}
-
-std::string Scene::parseModel(std::ifstream& ifs, pugi::xml_node& root) {
-    Mesh m;
-    std::string str;
-    while (ifs) {
-        ifs >> str;
-        if (str == "STL") {
-            ifs >> str;
-            m.loadStl(str);
-        } else if (str == "DIFF" || str == "SPEC" || str == "AMB" || str == "SHININESS") {
-            parseMatProp(ifs, str, m.m);
-        } else if (str.substr(0, 2) == "//") {
-            std::getline(ifs, str);
-        } else {
-            break;
-        }
-    }
-    m.toXml(root);
-    _meshes.push_back(m);
-    return str;
-}
 
 Scene::Scene(const std::string& filename)
     : _backgroundColor(0.1f, 0.1f, 0.1f),
@@ -137,69 +20,63 @@ Scene::Scene(const std::string& filename)
       _up(0.0f, 1.0f, 0.0f),
       _lookAt(0.0f, 0.0, 1.0f),
       _eye(0.0f, 0.0f, 150.0f) {
-    std::ifstream ifs(filename);
-    std::string str;
-    ifs >> str;
-
     pugi::xml_document doc;
-    pugi::xml_node root = doc.append_child("scene");
-    pugi::xml_node camera = root.append_child("camera");
-    pugi::xml_node objects = root.append_child("objects");
+    doc.load_file(filename.c_str());
+    pugi::xml_node root = doc.child("scene");
 
-    while (ifs) {
-        if (str == "LIGHT")
-            str = parseLight(ifs, objects);
-        else if (str == "SPHERE")
-            str = parseSphere(ifs, objects);
-        else if (str == "QUAD")
-            str = parseQuad(ifs, objects);
-        else if (str == "MODEL")
-            str = parseModel(ifs, objects);
-        else if (str == "BACKGROUND")
-            ifs >> _backgroundColor.r >> _backgroundColor.g >> _backgroundColor.b >> str;
-        else if (str == "ANTIALIAS")
-            ifs >> _antialias >> str;
-        else if (str == "MAXDEPTH")
-            ifs >> _maxDepth >> str;
-        else if (str == "RESOLUTION")
-            ifs >> _width >> _height >> str;
-        else if (str == "FOV")
-            ifs >> _fov >> str;
-        else if (str.substr(0, 2) == "//") {
-            std::getline(ifs, str);
-            ifs >> str;
+    // Load Camera Settings
+    pugi::xml_node camera = root.child("camera");
+    for (auto& attr : camera.attributes()) {
+        std::string name = attr.name();
+        if (name == "maxDepth")
+            _maxDepth = attr.as_uint();
+        else if (name == "antialias")
+            _antialias = attr.as_uint();
+        else if (name == "width")
+            _width = attr.as_uint();
+        else if (name == "height")
+            _height = attr.as_uint();
+        else if (name == "fov")
+            _fov = attr.as_float();
+        else
+            std::cout << "Unknown attribute in \"camera\": \"" << name << "\"" << std::endl;
+    }
+    for (auto& child : camera.children()) {
+        std::string name = child.name();
+        if (name == "background") {
+            _backgroundColor.r = child.attribute("r").as_float();
+            _backgroundColor.g = child.attribute("g").as_float();
+            _backgroundColor.b = child.attribute("b").as_float();
+        } else if (name == "up") {
+            _up.x = child.attribute("x").as_float();
+            _up.y = child.attribute("y").as_float();
+            _up.z = child.attribute("z").as_float();
+        } else if (name == "lookAt") {
+            _lookAt.x = child.attribute("x").as_float();
+            _lookAt.y = child.attribute("y").as_float();
+            _lookAt.z = child.attribute("z").as_float();
+        } else if (name == "eye") {
+            _eye.x = child.attribute("x").as_float();
+            _eye.y = child.attribute("y").as_float();
+            _eye.z = child.attribute("z").as_float();
         } else {
-            ifs >> str;
+            std::cout << "Unknown child in \"camera\": \"" << name << "\"" << std::endl;
         }
     }
 
-    camera.append_attribute("maxDepth") = _maxDepth;
-    camera.append_attribute("antialias") = _antialias;
-    camera.append_attribute("width") = _width;
-    camera.append_attribute("height") = _height;
-    camera.append_attribute("fov") = _fov;
-
-    pugi::xml_node backgroundNode = camera.append_child("background");
-    backgroundNode.append_attribute("r") = _backgroundColor.r;
-    backgroundNode.append_attribute("g") = _backgroundColor.g;
-    backgroundNode.append_attribute("b") = _backgroundColor.b;
-
-    pugi::xml_node upNode = camera.append_child("up");
-    upNode.append_attribute("x") = _up.x;
-    upNode.append_attribute("y") = _up.y;
-    upNode.append_attribute("z") = _up.z;
-
-    pugi::xml_node lookAtNode = camera.append_child("lookAt");
-    lookAtNode.append_attribute("x") = _lookAt.x;
-    lookAtNode.append_attribute("y") = _lookAt.y;
-    lookAtNode.append_attribute("z") = _lookAt.z;
-
-    pugi::xml_node eyeNode = camera.append_child("eye");
-    eyeNode.append_attribute("x") = _eye.x;
-    eyeNode.append_attribute("y") = _eye.y;
-    eyeNode.append_attribute("z") = _eye.z;
-
-    doc.save_file((filename.substr(0, filename.find_last_of('.')) + ".scene").c_str(), "    ");
+    // Load Object Settings
+    pugi::xml_node objects = root.child("objects");
+    for (auto& child : objects.children()) {
+        std::string name = child.name();
+        if (name == "light")
+            _lights.push_back(Light::fromXml(child));
+        else if (name == "sphere")
+            _spheres.push_back(Sphere::fromXml(child));
+        else if (name == "mesh")
+            _meshes.push_back(Mesh::fromXml(child));
+        else
+            std::cout << "Unknown child in \"objects\": \"" << name << "\"" << std::endl;
+    }
 }
 
 float Scene::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal,

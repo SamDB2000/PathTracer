@@ -42,4 +42,18 @@ pugi::xml_node Sphere::toXml(pugi::xml_node& root) {
     return node;
 }
 
+Sphere Sphere::fromXml(pugi::xml_node node) {
+    Sphere s;
+
+    s.radius = node.child("radius").attribute("value").as_float();
+
+    pugi::xml_node posNode = node.child("pos");
+    s.pos.x = posNode.attribute("x").as_float();
+    s.pos.y = posNode.attribute("y").as_float();
+    s.pos.z = posNode.attribute("z").as_float();
+
+    s.m = Material::fromXml(node.child("material"));
+    return s;
+}
+
 }  // namespace path_tracer

@@ -28,12 +28,6 @@ private:
     std::vector<Mesh> _meshes;
     BoundingVolume::Ptr _bvh;
 
-    void readVec(std::ifstream& ifs, glm::vec3& vec);
-    void parseMatProp(std::ifstream& ifs, const std::string& str, Material& m);
-    std::string parseLight(std::ifstream& ifs, pugi::xml_node& root);
-    std::string parseSphere(std::ifstream& ifs, pugi::xml_node& root);
-    std::string parseQuad(std::ifstream& ifs, pugi::xml_node& root);
-    std::string parseModel(std::ifstream& ifs, pugi::xml_node& root);
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal,
                   Material& mat);
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir);

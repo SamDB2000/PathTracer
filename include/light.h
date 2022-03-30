@@ -12,6 +12,7 @@ struct Light {
     glm::vec3 spec{ 0.55f, 0.55f, 0.55f };
 
     pugi::xml_node toXml(pugi::xml_node& root);
+    static Light fromXml(pugi::xml_node node);
 };
 
 }  // namespace path_tracer

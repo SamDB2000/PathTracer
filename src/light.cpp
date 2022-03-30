@@ -23,4 +23,25 @@ pugi::xml_node Light::toXml(pugi::xml_node& root) {
     return node;
 }
 
+Light Light::fromXml(pugi::xml_node node) {
+    Light l;
+    
+    pugi::xml_node posNode = node.child("pos");
+    l.pos.x = posNode.attribute("x").as_float();
+    l.pos.y = posNode.attribute("y").as_float();
+    l.pos.z = posNode.attribute("z").as_float();
+
+    pugi::xml_node diffNode = node.child("diff");
+    l.diff.r = diffNode.attribute("r").as_float();
+    l.diff.g = diffNode.attribute("g").as_float();
+    l.diff.b = diffNode.attribute("b").as_float();
+
+    pugi::xml_node specNode = node.child("spec");
+    l.spec.r = specNode.attribute("r").as_float();
+    l.spec.g = specNode.attribute("g").as_float();
+    l.spec.b = specNode.attribute("b").as_float();
+
+    return l;
+}
+
 }  // namespace path_tracer
