@@ -122,6 +122,7 @@
     <ClCompile Include="src/scene.cpp" />
     <ClCompile Include="src/sphere.cpp" />
     <ClCompile Include="src/triangle.cpp" />
+    <ClCompile Include="src\AABB.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="deps/pugixml-1.12/src/pugiconfig.hpp" />
@@ -133,6 +134,7 @@
     <ClInclude Include="include/scene.h" />
     <ClInclude Include="include/sphere.h" />
     <ClInclude Include="include/triangle.h" />
+    <ClInclude Include="include\AABB.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -3,6 +3,7 @@
 #include <sstream>
 #include <bitmap_header.h>
 #include <omp.h>
+#include <ctime>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/euler_angles.hpp>
 
@@ -87,7 +88,23 @@ std::string Scene::parseQuad(std::ifstream& ifs) {
     if (verts.size() == 3)
         verts.push_back(verts[1] + verts[2] - verts[0]);
     if (verts.size() == 4) {
-        _meshes.emplace_back(Mesh{ m,
+        // Sorry for ugly code (will hopefully come up with better way later)
+        // Just finds the min/max bounds for the AABB
+        float max_x = verts[0].x; float min_x = verts[0].x;
+        float max_y = verts[0].y; float min_y = verts[0].y;
+        float max_z = verts[0].z; float min_z = verts[0].z;
+        for (int i = 0; i < 4; i++) {
+            if (max_x < verts[i].x) max_x = verts[i].x;
+            if (max_y < verts[i].y) max_y = verts[i].y;
+            if (max_z < verts[i].z) max_z = verts[i].z;
+            if (min_x > verts[i].x) min_x = verts[i].x;
+            if (min_y > verts[i].y) min_y = verts[i].y;
+            if (min_z > verts[i].z) min_z = verts[i].z;
+        }
+        
+        AABB box = AABB(glm::vec3(min_x, min_y, min_z), glm::vec3(min_x, min_y, min_z));
+        
+        _meshes.emplace_back(Mesh{ m, box,
                                    { Triangle{ m, verts[2], verts[1], verts[0] },
                                      Triangle{ m, verts[1], verts[2], verts[3] } } });
     }
@@ -102,6 +119,11 @@ std::string Scene::parseModel(std::ifstream& ifs) {
         if (str == "STL") {
             ifs >> str;
             m.loadStl(str);
+            // Bounds are correct
+            /*std::cout << "Mesh loaded with bounds: (" << m.AABbox.bounds[0].x << ", "
+                      << m.AABbox.bounds[0].y << ", " << m.AABbox.bounds[0].z << ")\n";
+            std::cout << m.AABbox.bounds[1].x << ", " << m.AABbox.bounds[1].y << ", "
+                      << m.AABbox.bounds[1].z << ")\n";*/
         } else if (str == "DIFF" || str == "SPEC" || str == "AMB" || str == "SHININESS") {
             parseMatProp(ifs, str, m.m);
         } else if (str.substr(0, 2) == "//") {
@@ -227,6 +249,7 @@ glm::vec3 Scene::raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter) {
 }
 
 void Scene::render(const std::string& filename) {
+    clock_t timeStart = clock();
     int width = _width * _antialias;
     int height = _height * _antialias;
     std::vector<std::vector<glm::vec3>> buffer(width, std::vector<glm::vec3>(height));
@@ -266,7 +289,9 @@ void Scene::render(const std::string& filename) {
             std::cout << "\rRendering " << per << "." << dec << "% complete  " << std::flush;
         }
     }
+    clock_t timeEnd = clock();
     std::cout << "\rRendering 100% complete. Writing to " << filename << '\n';
+    std::cout << "Render time: " << (float) (timeEnd - timeStart) / CLOCKS_PER_SEC << " (sec)\n";
 
     // Write bmp header
     std::ofstream ofs(filename, std::ios::out | std::ios::binary);
@@ -288,7 +313,7 @@ void Scene::render(const std::string& filename) {
             ofs.write((char*) &r, sizeof(uint8_t));
         }
     }
-    std::cout << "Done writing\n";
+    std::cout << "Done writing\n";   
 }
 
 std::ostream& operator<<(std::ostream& os, Scene& s) {
