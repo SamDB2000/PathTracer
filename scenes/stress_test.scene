@@ -12,11 +12,11 @@
             <diff r="0.5" g="0.5" b="0.5" />
             <spec r="0.5" g="0.5" b="0.5" />
         </light>
-        <mesh type="stl" filename="models/Teapot.stl">
+        <mesh type="stl" filename="models/GooseHydra.stl">
             <material>
                 <diff r="0.703800023" g="0.270480007" b="0.0828000009" />
                 <spec r="0.256776989" g="0.137621999" b="0.0860140026" />
-                <shininess value="128" />
+                <shininess value="12.8000002" />
                 <amb r="0.191249996" g="0.0734999999" b="0.0225000009" />
             </material>
         </mesh>
