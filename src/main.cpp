@@ -32,7 +32,7 @@ int main(int argc, char const* argv[]) {
         ofs.close();
     }
 
-    scene.render(outFile);
+    // scene.render(outFile);
 
     return 0;
 }

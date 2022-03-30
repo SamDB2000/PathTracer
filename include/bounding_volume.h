@@ -16,7 +16,7 @@ public:
     BoundingVolume(Ptr bv0, Ptr bv1);
 
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal);
-    void toXml(pugi::xml_node& root);
+    pugi::xml_node toXml(pugi::xml_node& root);
 
 private:
     glm::vec3 _min;

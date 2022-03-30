@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+<scene>
+    <camera maxDepth="8" antialias="3" width="800" height="800" fov="90">
+        <background r="0" g="0" b="0" />
+        <up x="0" y="1" z="0" />
+        <lookAt x="0" y="0" z="1" />
+        <eye x="0" y="0" z="150" />
+    </camera>
+    <objects>
+        <light>
+            <pos x="10" y="10" z="100" />
+            <diff r="1" g="1" b="1" />
+            <spec r="1" g="1" b="1" />
+        </light>
+        <light>
+            <pos x="-100" y="10" z="-10" />
+            <diff r="1" g="0" b="0" />
+            <spec r="1" g="1" b="1" />
+        </light>
+        <sphere>
+            <radius value="45" />
+            <pos x="0" y="0" z="0" />
+            <material>
+                <diff r="1" g="0.330000013" b="0.330000013" />
+                <spec r="1" g="1" b="1" />
+                <shininess value="20" />
+                <amb r="0" g="0" b="0" />
+            </material>
+        </sphere>
+        <sphere>
+            <radius value="15" />
+            <pos x="0" y="60" z="75" />
+            <material>
+                <diff r="1" g="1" b="0" />
+                <spec r="0" g="0" b="0" />
+                <shininess value="200" />
+                <amb r="0" g="0" b="0" />
+            </material>
+        </sphere>
+        <mesh type="quad">
+            <material>
+                <diff r="0.25" g="0.25" b="0.25" />
+                <spec r="1" g="1" b="0" />
+                <shininess value="2000" />
+                <amb r="0" g="0" b="0" />
+            </material>
+            <verts>
+                <v x="-150" y="-150" z="-150" />
+                <v x="-150" y="150" z="-150" />
+                <v x="150" y="-150" z="-150" />
+            </verts>
+        </mesh>
+        <mesh type="quad">
+            <material>
+                <diff r="1" g="1" b="1" />
+                <spec r="1" g="0" b="0" />
+                <shininess value="10" />
+                <amb r="0" g="0" b="0" />
+            </material>
+            <verts>
+                <v x="150" y="-150" z="150" />
+                <v x="150" y="-150" z="-150" />
+                <v x="150" y="150" z="150" />
+            </verts>
+        </mesh>
+        <mesh type="quad">
+            <material>
+                <diff r="0.699999988" g="0.699999988" b="0.125499994" />
+                <spec r="1" g="1" b="1" />
+                <shininess value="10" />
+                <amb r="0" g="0" b="0" />
+            </material>
+            <verts>
+                <v x="-150" y="-150" z="-150" />
+                <v x="-150" y="-150" z="150" />
+                <v x="-150" y="150" z="-150" />
+            </verts>
+        </mesh>
+        <mesh type="quad">
+            <material>
+                <diff r="0" g="1" b="0" />
+                <spec r="0" g="0" b="0" />
+                <shininess value="10" />
+                <amb r="0" g="0" b="0" />
+            </material>
+            <verts>
+                <v x="-150" y="-150" z="150" />
+                <v x="-150" y="-150" z="-150" />
+                <v x="150" y="-150" z="150" />
+            </verts>
+        </mesh>
+        <mesh type="quad">
+            <material>
+                <diff r="1" g="0.200000003" b="0.200000003" />
+                <spec r="1" g="1" b="1" />
+                <shininess value="100" />
+                <amb r="0" g="0" b="0" />
+            </material>
+            <verts>
+                <v x="-150" y="150" z="150" />
+                <v x="150" y="150" z="150" />
+                <v x="-150" y="150" z="-150" />
+            </verts>
+        </mesh>
+    </objects>
+</scene>

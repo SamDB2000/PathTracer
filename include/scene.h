@@ -20,6 +20,9 @@ private:
     unsigned int _width;
     unsigned int _height;
     float _fov;
+    glm::vec3 _up;
+    glm::vec3 _lookAt;
+    glm::vec3 _eye;
     std::vector<Light> _lights;
     std::vector<Sphere> _spheres;
     std::vector<Mesh> _meshes;
@@ -27,10 +30,10 @@ private:
 
     void readVec(std::ifstream& ifs, glm::vec3& vec);
     void parseMatProp(std::ifstream& ifs, const std::string& str, Material& m);
-    std::string parseLight(std::ifstream& ifs);
-    std::string parseSphere(std::ifstream& ifs);
-    std::string parseQuad(std::ifstream& ifs);
-    std::string parseModel(std::ifstream& ifs);
+    std::string parseLight(std::ifstream& ifs, pugi::xml_node& root);
+    std::string parseSphere(std::ifstream& ifs, pugi::xml_node& root);
+    std::string parseQuad(std::ifstream& ifs, pugi::xml_node& root);
+    std::string parseModel(std::ifstream& ifs, pugi::xml_node& root);
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal,
                   Material& mat);
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir);

@@ -31,8 +31,9 @@ float BoundingVolume::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hit
     return 0.0f;
 }
 
-void BoundingVolume::toXml(pugi::xml_node& root) {
+pugi::xml_node BoundingVolume::toXml(pugi::xml_node& root) {
     pugi::xml_node node = root.append_child("node");
+
     node.append_attribute("min_x") = _min.x;
     node.append_attribute("min_y") = _min.y;
     node.append_attribute("min_z") = _min.z;
@@ -46,6 +47,8 @@ void BoundingVolume::toXml(pugi::xml_node& root) {
         _children[0]->toXml(node);
         _children[1]->toXml(node);
     }
+
+    return node;
 }
 
 

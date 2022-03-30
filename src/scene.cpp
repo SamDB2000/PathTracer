@@ -24,7 +24,7 @@ void Scene::parseMatProp(std::ifstream& ifs, const std::string& str, Material& m
         ifs >> m.shininess;
 }
 
-std::string Scene::parseLight(std::ifstream& ifs) {
+std::string Scene::parseLight(std::ifstream& ifs, pugi::xml_node& root) {
     Light l;
     std::string str;
     while (ifs) {
@@ -40,13 +40,14 @@ std::string Scene::parseLight(std::ifstream& ifs) {
         else
             break;
     }
+    l.toXml(root);
     _lights.push_back(l);
     // _spheres.push_back(Sphere{
     //     Material{ glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, glm::vec3(l.diff) }, l.pos, 10.0f });
     return str;
 }
 
-std::string Scene::parseSphere(std::ifstream& ifs) {
+std::string Scene::parseSphere(std::ifstream& ifs, pugi::xml_node& root) {
     Sphere s;
     std::string str;
     while (ifs) {
@@ -62,11 +63,12 @@ std::string Scene::parseSphere(std::ifstream& ifs) {
         else
             break;
     }
+    s.toXml(root);
     _spheres.push_back(s);
     return str;
 }
 
-std::string Scene::parseQuad(std::ifstream& ifs) {
+std::string Scene::parseQuad(std::ifstream& ifs, pugi::xml_node& root) {
     Material m;
     std::vector<glm::vec3> verts;
     verts.reserve(4);
@@ -90,11 +92,21 @@ std::string Scene::parseQuad(std::ifstream& ifs) {
     if (verts.size() == 4) {
         _meshes.emplace_back(m, std::vector<Triangle>{ { m, verts[2], verts[1], verts[0] },
                                                        { m, verts[1], verts[2], verts[3] } });
+        pugi::xml_node node = _meshes.back().toXml(root);
+        node.remove_child("tris");
+        node.append_attribute("type") = "quad";
+        pugi::xml_node vertsNode = node.append_child("verts");
+        for (int i = 0; i < 3; i++) {
+            pugi::xml_node v = vertsNode.append_child("v");
+            v.append_attribute("x") = verts[i].x;
+            v.append_attribute("y") = verts[i].y;
+            v.append_attribute("z") = verts[i].z;
+        }
     }
     return str;
 }
 
-std::string Scene::parseModel(std::ifstream& ifs) {
+std::string Scene::parseModel(std::ifstream& ifs, pugi::xml_node& root) {
     Mesh m;
     std::string str;
     while (ifs) {
@@ -110,6 +122,7 @@ std::string Scene::parseModel(std::ifstream& ifs) {
             break;
         }
     }
+    m.toXml(root);
     _meshes.push_back(m);
     return str;
 }
@@ -120,20 +133,28 @@ Scene::Scene(const std::string& filename)
       _antialias(1),
       _width(400),
       _height(400),
-      _fov(90.0f) {
+      _fov(90.0f),
+      _up(0.0f, 1.0f, 0.0f),
+      _lookAt(0.0f, 0.0, 1.0f),
+      _eye(0.0f, 0.0f, 150.0f) {
     std::ifstream ifs(filename);
     std::string str;
     ifs >> str;
 
+    pugi::xml_document doc;
+    pugi::xml_node root = doc.append_child("scene");
+    pugi::xml_node camera = root.append_child("camera");
+    pugi::xml_node objects = root.append_child("objects");
+
     while (ifs) {
         if (str == "LIGHT")
-            str = parseLight(ifs);
+            str = parseLight(ifs, objects);
         else if (str == "SPHERE")
-            str = parseSphere(ifs);
+            str = parseSphere(ifs, objects);
         else if (str == "QUAD")
-            str = parseQuad(ifs);
+            str = parseQuad(ifs, objects);
         else if (str == "MODEL")
-            str = parseModel(ifs);
+            str = parseModel(ifs, objects);
         else if (str == "BACKGROUND")
             ifs >> _backgroundColor.r >> _backgroundColor.g >> _backgroundColor.b >> str;
         else if (str == "ANTIALIAS")
@@ -151,6 +172,34 @@ Scene::Scene(const std::string& filename)
             ifs >> str;
         }
     }
+
+    camera.append_attribute("maxDepth") = _maxDepth;
+    camera.append_attribute("antialias") = _antialias;
+    camera.append_attribute("width") = _width;
+    camera.append_attribute("height") = _height;
+    camera.append_attribute("fov") = _fov;
+
+    pugi::xml_node backgroundNode = camera.append_child("background");
+    backgroundNode.append_attribute("r") = _backgroundColor.r;
+    backgroundNode.append_attribute("g") = _backgroundColor.g;
+    backgroundNode.append_attribute("b") = _backgroundColor.b;
+
+    pugi::xml_node upNode = camera.append_child("up");
+    upNode.append_attribute("x") = _up.x;
+    upNode.append_attribute("y") = _up.y;
+    upNode.append_attribute("z") = _up.z;
+
+    pugi::xml_node lookAtNode = camera.append_child("lookAt");
+    lookAtNode.append_attribute("x") = _lookAt.x;
+    lookAtNode.append_attribute("y") = _lookAt.y;
+    lookAtNode.append_attribute("z") = _lookAt.z;
+
+    pugi::xml_node eyeNode = camera.append_child("eye");
+    eyeNode.append_attribute("x") = _eye.x;
+    eyeNode.append_attribute("y") = _eye.y;
+    eyeNode.append_attribute("z") = _eye.z;
+
+    doc.save_file((filename.substr(0, filename.find_last_of('.')) + ".scene").c_str(), "    ");
 }
 
 float Scene::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal,
@@ -231,19 +280,14 @@ void Scene::render(const std::string& filename) {
     int height = _height * _antialias;
     std::vector<std::vector<glm::vec3>> buffer(width, std::vector<glm::vec3>(height));
 
-    // Camera Params
-    glm::vec3 up(0.0f, 1.0f, 0.0f);
-    glm::vec3 lookAt(0.0f, 0.0, -1.0f);
-    glm::vec3 eye(0.0f, 0.0f, 150.0f);
-
     // Gramm-Schmidt orthonormalization
-    glm::vec3 l = glm::normalize(lookAt - eye);
-    glm::vec3 v = glm::normalize(glm::cross(l, up));
+    glm::vec3 l = glm::normalize(_lookAt - _eye);
+    glm::vec3 v = glm::normalize(glm::cross(l, _up));
     glm::vec3 u = glm::cross(v, l);
 
     float aspectRatio = (float) width / height;
     float focalLength = 1.0f / glm::tan(_fov / 2.0f);
-    glm::vec3 ll = eye + focalLength * l - aspectRatio * v - u;
+    glm::vec3 ll = _eye + focalLength * l - aspectRatio * v - u;
 
     size_t completed = 0;
 
@@ -253,8 +297,8 @@ void Scene::render(const std::string& filename) {
         float y = i % width;
         glm::vec3 p =
             ll + 2.0f * aspectRatio * v * ((float) x / width) + 2.0f * u * ((float) y / height);
-        glm::vec3 ray = glm::normalize(p - eye);
-        buffer[x][y] = glm::clamp(raytrace(eye, ray), glm::vec3(0.0f), glm::vec3(1.0f));
+        glm::vec3 ray = glm::normalize(p - _eye);
+        buffer[x][y] = glm::clamp(raytrace(_eye, ray), glm::vec3(0.0f), glm::vec3(1.0f));
 
 #pragma omp atomic
         completed++;
