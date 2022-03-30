@@ -1,4 +1,5 @@
 #include <iostream>
+#include <ctime>
 #include <scene.h>
 
 int main(int argc, char const* argv[]) {
@@ -14,6 +15,5 @@ int main(int argc, char const* argv[]) {
     path_tracer::Scene scene(argv[1]);
     std::cout << scene << '\n';
     scene.render(argv[2]);
-
     return 0;
 }

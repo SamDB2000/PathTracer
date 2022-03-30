@@ -12,6 +12,7 @@ def install_zip(url):
 
 def main():
     install_zip('https://github.com/g-truc/glm/releases/download/0.9.9.8/glm-0.9.9.8.zip')
+    install_zip('https://github.com/zeux/pugixml/releases/download/v1.12/pugixml-1.12.zip')
 
 if __name__ == '__main__':
     main()
