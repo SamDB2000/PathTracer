@@ -316,7 +316,7 @@ void Scene::exportBvh(std::ostream& os) {
     pugi::xml_node root = doc.append_child("bvh");
     if (_bvh)
         _bvh->toXml(root);
-    doc.print(os, "  ");
+    doc.save(os, "", pugi::format_raw | pugi::format_no_declaration);
 }
 
 std::ostream& operator<<(std::ostream& os, Scene& s) {
