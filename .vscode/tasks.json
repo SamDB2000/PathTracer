@@ -20,7 +20,10 @@
       "args": [
         "/m"
       ],
-      "group": "build",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
       "problemMatcher": []
     },
     {
@@ -31,10 +34,7 @@
         "/property:Configuration=Release",
         "/m"
       ],
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
+      "group": "build",
       "problemMatcher": []
     }
   ]

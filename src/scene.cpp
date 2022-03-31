@@ -96,15 +96,17 @@ float Scene::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm:
             mat = sphere.m;
         }
     }
-    for (Mesh& mesh : _meshes) {
+
+    if (_bvh) {
         glm::vec3 localHitPos;
         glm::vec3 localNormal;
-        float dist = mesh.raycast(rayPos, rayDir, localHitPos, localNormal);
+        Material localMat;
+        float dist = _bvh->raycast(rayPos, rayDir, localHitPos, localNormal, localMat);
         if (dist > 0.0f && dist < minDist) {
             minDist = dist;
             hitPos = localHitPos;
             normal = localNormal;
-            mat = mesh.m;
+            mat = localMat;
         }
     }
 
@@ -144,7 +146,7 @@ glm::vec3 Scene::raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter) {
                     light.spec * mat.spec *
                     std::pow(glm::dot(-rayDir, glm::reflect(toLightNorm, normal)), mat.shininess);
             }
-            if (mat.diff != glm::vec3(0.0f)) {
+            if (mat.spec != glm::vec3(0.0f)) {
                 color += mat.spec * 0.5f *
                          raytrace(shadowRayStart, glm::reflect(rayDir, normal), iter + 1);
             }
@@ -213,7 +215,7 @@ void Scene::render(const std::string& filename) {
             ofs.write((char*) &r, sizeof(uint8_t));
         }
     }
-    std::cout << "Done writing\n";   
+    std::cout << "Done writing\n";
 }
 
 void Scene::generateBvh() {
