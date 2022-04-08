@@ -12,9 +12,21 @@ namespace path_tracer {
 class BoundingVolume {
 public:
     typedef std::unique_ptr<BoundingVolume> Ptr;
+    typedef std::shared_ptr<BoundingVolume::Ptr> SharedPtr;
+
+    struct Pair {
+        Pair(const SharedPtr& bv0, const SharedPtr& bv1);
+        BoundingVolume::Ptr join();
+
+        SharedPtr bv0;
+        SharedPtr bv1;
+        float volume;
+    };
 
     BoundingVolume(Triangle* tri);
     BoundingVolume(Ptr bv0, Ptr bv1);
+    static SharedPtr makeShared(Triangle* tri);
+    static SharedPtr makeShared(Ptr bv0, Ptr bv1);
 
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal,
                   Material& outMat);

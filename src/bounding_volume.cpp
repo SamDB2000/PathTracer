@@ -3,6 +3,20 @@
 
 namespace path_tracer {
 
+BoundingVolume::Pair::Pair(const SharedPtr& bv0, const SharedPtr& bv1) : bv0(bv0), bv1(bv1) {
+    volume = (std::max((*bv0)->_aabb.bounds[1].x, (*bv1)->_aabb.bounds[1].x) -
+              std::min((*bv0)->_aabb.bounds[0].x, (*bv1)->_aabb.bounds[0].x)) *
+             (std::max((*bv0)->_aabb.bounds[1].y, (*bv1)->_aabb.bounds[1].y) -
+              std::min((*bv0)->_aabb.bounds[0].y, (*bv1)->_aabb.bounds[0].y)) *
+             (std::max((*bv0)->_aabb.bounds[1].z, (*bv1)->_aabb.bounds[1].z) -
+              std::min((*bv0)->_aabb.bounds[0].z, (*bv1)->_aabb.bounds[0].z));
+}
+
+BoundingVolume::Ptr BoundingVolume::Pair::join() {
+    BoundingVolume::Ptr ptr = std::make_unique<BoundingVolume>(std::move(*bv0), std::move(*bv1));
+    return ptr;
+}
+
 BoundingVolume::BoundingVolume(Triangle* tri)
     : _isRoot(true), _isLeaf(true), _children{ nullptr, nullptr }, _tri(tri) {
     _aabb.bounds[0].x = std::min({ tri->v0.x, tri->v1.x, tri->v2.x });
@@ -23,6 +37,15 @@ BoundingVolume::BoundingVolume(Ptr bv0, Ptr bv1)
     _aabb.bounds[1].x = std::max(_children[0]->_aabb.bounds[1].x, _children[1]->_aabb.bounds[1].x);
     _aabb.bounds[1].y = std::max(_children[0]->_aabb.bounds[1].y, _children[1]->_aabb.bounds[1].y);
     _aabb.bounds[1].z = std::max(_children[0]->_aabb.bounds[1].z, _children[1]->_aabb.bounds[1].z);
+}
+
+BoundingVolume::SharedPtr BoundingVolume::makeShared(Triangle* tri) {
+    return std::make_shared<BoundingVolume::Ptr>(std::make_unique<BoundingVolume>(tri));
+}
+
+BoundingVolume::SharedPtr BoundingVolume::makeShared(Ptr bv0, Ptr bv1) {
+    return std::make_shared<BoundingVolume::Ptr>(
+        std::make_unique<BoundingVolume>(std::move(bv0), std::move(bv1)));
 }
 
 float BoundingVolume::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos,
@@ -56,7 +79,8 @@ float BoundingVolume::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hit
             normal = norm0;
             outMat = mat0;
             return dist0;
-        } else if ((dist0 > 0.0 && dist1 > 0.0 && dist1 < dist0) || (dist1 > 0.0f && dist0 <= 0.0)) {
+        } else if ((dist0 > 0.0 && dist1 > 0.0 && dist1 < dist0) ||
+                   (dist1 > 0.0f && dist0 <= 0.0)) {
             hitPos = hit1;
             normal = norm1;
             outMat = mat1;

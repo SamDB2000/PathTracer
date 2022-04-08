@@ -8,6 +8,7 @@
 #include <sstream>
 #include <list>
 #include <iostream>
+#include <queue>
 
 namespace path_tracer {
 
@@ -221,21 +222,58 @@ void Scene::render(const std::string& filename) {
 void Scene::generateBvh() {
     if (_bvh)
         return;
-    std::list<BoundingVolume::Ptr> bvs;
-    for (auto& mesh : _meshes)
-        for (auto& tri : mesh.tris)
-            bvs.push_back(std::make_unique<BoundingVolume>(&tri));
-    if (bvs.size() == 0)
-        return;
-    while (bvs.size() > 1) {
-        BoundingVolume::Ptr bv0 = std::move(bvs.front());
-        bvs.pop_front();
-        BoundingVolume::Ptr bv1 = std::move(bvs.front());
-        bvs.pop_front();
-        bvs.push_back(std::make_unique<BoundingVolume>(std::move(bv0), std::move(bv1)));
+
+    std::cout << "Generating BVH..." << std::endl;
+    clock_t timeStart = clock();
+
+    // Get all tris in scene and add to Priority Queue
+    std::list<BoundingVolume::SharedPtr> bvs;
+    for (auto& mesh : _meshes) {
+        for (auto& tri : mesh.tris) {
+            bvs.push_back(BoundingVolume::makeShared(&tri));
+        }
     }
-    _bvh = std::move(bvs.front());
+    auto cmp = [](BoundingVolume::Pair bvp0, BoundingVolume::Pair bvp1) {
+        return bvp0.volume > bvp1.volume;
+    };
+    std::priority_queue<BoundingVolume::Pair, std::vector<BoundingVolume::Pair>, decltype(cmp)> pq(
+        cmp);
+    for (auto& t0 : bvs) {
+        for (auto& t1 : bvs) {
+            if (t0 != t1) {
+                pq.emplace(t0, t1);
+            }
+        }
+    }
+
+    size_t numTris = bvs.size();
+    // iterate through all pairs of bvs
+    while (!pq.empty()) {
+        BoundingVolume::Pair next = pq.top();
+        pq.pop();
+        if (*(next.bv0) != nullptr && *(next.bv1) != nullptr) {
+            auto bv = std::make_shared<BoundingVolume::Ptr>(std::move(next.join()));
+            auto it = bvs.begin();
+            while (it != bvs.end()) {
+                if (**it == nullptr) {
+                    bvs.erase(it++);
+                } else {
+                    pq.emplace(bv, *it);
+                    ++it;
+                }
+            }
+            bvs.push_back(bv);
+            int progress = 10000 * (numTris - bvs.size()) / numTris;
+            int per = progress / 100;
+            int dec = progress % 100;
+            std::cout << "\rBVH " << per << "." << dec << "% complete  " << std::flush;
+        }
+    }
+    _bvh = std::move(*(bvs.front()));
     bvs.pop_front();
+    clock_t timeEnd = clock();
+    std::cout << "\rBVH Generation completed. Beginning Render...\n"
+              << "Generation time: " << (float) (timeEnd - timeStart) / CLOCKS_PER_SEC << " (sec)\n";
 }
 
 void Scene::exportBvh(std::ostream& os) {
