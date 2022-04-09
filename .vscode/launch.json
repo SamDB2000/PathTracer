@@ -11,8 +11,9 @@
       // "program": "${workspaceFolder}/render_all.py",
       "program": "${workspaceFolder}/x64/Debug/PathTracer.exe",
       "args": [
-        "scenes/cornell2.scene",
-        "out/cornell2.bmp"
+        "scenes/stress_test.scene",
+        "out/stress_test.bmp",
+        "cache/stress_test.bvh"
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",

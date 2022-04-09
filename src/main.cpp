@@ -4,6 +4,8 @@
 #include <fstream>
 
 int main(int argc, char const* argv[]) {
+    std::srand(std::time(0));
+
     std::string inFile;
     std::string outFile;
     std::string cacheFile;

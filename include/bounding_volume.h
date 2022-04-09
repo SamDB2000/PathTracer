@@ -4,6 +4,8 @@
 #include <glm/glm.hpp>
 #include <pugixml.hpp>
 #include <memory>
+#include <vector>
+#include <list>
 #include <triangle.h>
 #include <AABB.h>
 
@@ -32,13 +34,18 @@ public:
                   Material& outMat);
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir);
     pugi::xml_node toXml(pugi::xml_node& root);
-
+    static Ptr generate(const std::vector<Triangle*>& tris);
 private:
     AABB _aabb;
     bool _isRoot;
     bool _isLeaf;
     Ptr _children[2];
     Triangle* _tri;
+
+    static size_t _progress;
+    static size_t _totalTris;
+    static Ptr topDown(std::list<SharedPtr>& bvs, size_t targetSize = 4096);
+    static Ptr bottomUp(std::list<SharedPtr>& bvs);
 };
 
 }  // namespace path_tracer

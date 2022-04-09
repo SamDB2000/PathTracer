@@ -8,7 +8,6 @@
 #include <sstream>
 #include <list>
 #include <iostream>
-#include <queue>
 
 namespace path_tracer {
 
@@ -202,7 +201,7 @@ void Scene::render(const std::string& filename) {
     ofs.write(bmpHead.rawData, sizeof(bmpHead));
     for (int i = 0; i < _height; i++) {
         for (int j = 0; j < _width; j++) {
-            glm::vec3 color;
+            glm::vec3 color(0.0f);
             for (int r = 0; r < _antialias; r++)
                 for (int c = 0; c < _antialias; c++)
                     color += buffer[_antialias * j + r][_antialias * i + c];
@@ -223,57 +222,16 @@ void Scene::generateBvh() {
     if (_bvh)
         return;
 
-    std::cout << "Generating BVH..." << std::endl;
-    clock_t timeStart = clock();
-
-    // Get all tris in scene and add to Priority Queue
-    std::list<BoundingVolume::SharedPtr> bvs;
-    for (auto& mesh : _meshes) {
-        for (auto& tri : mesh.tris) {
-            bvs.push_back(BoundingVolume::makeShared(&tri));
-        }
-    }
-    auto cmp = [](BoundingVolume::Pair bvp0, BoundingVolume::Pair bvp1) {
-        return bvp0.volume > bvp1.volume;
-    };
-    std::priority_queue<BoundingVolume::Pair, std::vector<BoundingVolume::Pair>, decltype(cmp)> pq(
-        cmp);
-    for (auto& t0 : bvs) {
-        for (auto& t1 : bvs) {
-            if (t0 != t1) {
-                pq.emplace(t0, t1);
-            }
-        }
-    }
-
-    size_t numTris = bvs.size();
-    // iterate through all pairs of bvs
-    while (!pq.empty()) {
-        BoundingVolume::Pair next = pq.top();
-        pq.pop();
-        if (*(next.bv0) != nullptr && *(next.bv1) != nullptr) {
-            auto bv = std::make_shared<BoundingVolume::Ptr>(std::move(next.join()));
-            auto it = bvs.begin();
-            while (it != bvs.end()) {
-                if (**it == nullptr) {
-                    bvs.erase(it++);
-                } else {
-                    pq.emplace(bv, *it);
-                    ++it;
-                }
-            }
-            bvs.push_back(bv);
-            int progress = 10000 * (numTris - bvs.size()) / numTris;
-            int per = progress / 100;
-            int dec = progress % 100;
-            std::cout << "\rBVH " << per << "." << dec << "% complete  " << std::flush;
-        }
-    }
-    _bvh = std::move(*(bvs.front()));
-    bvs.pop_front();
-    clock_t timeEnd = clock();
-    std::cout << "\rBVH Generation completed. Beginning Render...\n"
-              << "Generation time: " << (float) (timeEnd - timeStart) / CLOCKS_PER_SEC << " (sec)\n";
+    std::vector<Triangle*> tris;
+    size_t numTris = 0;
+    for (auto& mesh : _meshes)
+        numTris += mesh.tris.size();
+    tris.reserve(numTris);
+    for (auto& mesh : _meshes)
+        for (auto& tri : mesh.tris)
+            tris.push_back(&tri);
+    
+    _bvh = std::move(BoundingVolume::generate(tris));
 }
 
 void Scene::exportBvh(std::ostream& os) {
