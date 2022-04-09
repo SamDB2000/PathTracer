@@ -103,25 +103,8 @@ pugi::xml_node Mesh::toXml(pugi::xml_node& root) {
         node.append_attribute("filename") = filename.c_str();
     } else {
         pugi::xml_node trisNode = node.append_child("tris");
-        for (auto& tri : tris) {
-            pugi::xml_node triNode = trisNode.append_child("tri");
-
-            pugi::xml_node v;
-            v = triNode.append_child("v");
-            v.append_attribute("x") = tri.v0.x;
-            v.append_attribute("y") = tri.v0.y;
-            v.append_attribute("z") = tri.v0.z;
-
-            v = triNode.append_child("v");
-            v.append_attribute("x") = tri.v1.x;
-            v.append_attribute("y") = tri.v1.y;
-            v.append_attribute("z") = tri.v1.z;
-
-            v = triNode.append_child("v");
-            v.append_attribute("x") = tri.v2.x;
-            v.append_attribute("y") = tri.v2.y;
-            v.append_attribute("z") = tri.v2.z;
-        }
+        for (auto& tri : tris)
+            tri.toXml(trisNode);
     }
     m.toXml(node);
     return node;
@@ -164,21 +147,7 @@ Mesh Mesh::fromXml(pugi::xml_node node) {
         for (auto& triNode : trisNode.children()) {
             if (triNode.name() != "tri")
                 continue;
-            Triangle tri;
-            auto vt = triNode.children("v").begin();
-            tri.v0.x = vt->attribute("x").as_float();
-            tri.v0.y = vt->attribute("y").as_float();
-            tri.v0.z = vt->attribute("z").as_float();
-
-            vt++;
-            tri.v1.x = vt->attribute("x").as_float();
-            tri.v1.y = vt->attribute("y").as_float();
-            tri.v1.z = vt->attribute("z").as_float();
-
-            vt++;
-            tri.v2.x = vt->attribute("x").as_float();
-            tri.v2.y = vt->attribute("y").as_float();
-            tri.v2.z = vt->attribute("z").as_float();
+            mesh.tris.push_back(Triangle::fromXml(triNode));
         }
     }
     Material mat = Material::fromXml(node.child("material"));

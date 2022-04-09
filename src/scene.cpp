@@ -78,6 +78,16 @@ Scene::Scene(const std::string& filename)
         else
             std::cout << "Unknown child in \"objects\": \"" << name << "\"" << std::endl;
     }
+
+    size_t numTris = 0;
+    for (auto& mesh : _meshes)
+        numTris += mesh.tris.size();
+    _tris.reserve(numTris);
+    for (auto& mesh : _meshes) {
+        for (auto& tri : mesh.tris)
+            _tris.push_back(tri);
+        mesh.tris.clear();
+    }
 }
 
 float Scene::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal,
@@ -221,17 +231,7 @@ void Scene::render(const std::string& filename) {
 void Scene::generateBvh() {
     if (_bvh)
         return;
-
-    std::vector<Triangle*> tris;
-    size_t numTris = 0;
-    for (auto& mesh : _meshes)
-        numTris += mesh.tris.size();
-    tris.reserve(numTris);
-    for (auto& mesh : _meshes)
-        for (auto& tri : mesh.tris)
-            tris.push_back(&tri);
-    
-    _bvh = std::move(BoundingVolume::generate(tris));
+    _bvh = std::move(BoundingVolume::generate(_tris));
 }
 
 void Scene::exportBvh(std::ostream& os) {
@@ -242,13 +242,24 @@ void Scene::exportBvh(std::ostream& os) {
     doc.save(os, "", pugi::format_raw | pugi::format_no_declaration);
 }
 
+void Scene::importBvh(const std::string& filename) {
+    if (_bvh)
+        return;
+    std::cout << "Loading BVH from " << filename << "...\n";
+    pugi::xml_document doc;
+    doc.load_file(filename.c_str());
+    pugi::xml_node root = doc.child("bvh").child("bv");
+    _bvh = std::move(BoundingVolume::fromXml(root, _tris));
+    if (_bvh)
+        std::cout << "Successfully Loaded BVH\n";
+    else
+        std::cout << "Could not load BVH\n";
+}
+
 std::ostream& operator<<(std::ostream& os, Scene& s) {
-    long triCount = 0;
-    for (Mesh& mesh : s._meshes)
-        triCount += mesh.tris.size();
     os << "[Scene resolution=" << s._width << "x" << s._height << " antialias=" << s._antialias
        << " maxDepth=" << s._maxDepth << " | " << s._lights.size() << " lights, "
-       << s._spheres.size() << " spheres, " << s._meshes.size() << " meshes, " << triCount
+       << s._spheres.size() << " spheres, " << s._meshes.size() << " meshes, " << s._tris.size()
        << " triangles]";
     return os;
 }

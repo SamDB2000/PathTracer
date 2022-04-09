@@ -25,22 +25,33 @@ public:
         float volume;
     };
 
-    BoundingVolume(Triangle* tri);
+    BoundingVolume(Triangle* tri, size_t id);
     BoundingVolume(Ptr bv0, Ptr bv1);
-    static SharedPtr makeShared(Triangle* tri);
+    ~BoundingVolume();
+    static SharedPtr makeShared(Triangle* tri, size_t id);
     static SharedPtr makeShared(Ptr bv0, Ptr bv1);
 
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal,
                   Material& outMat);
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir);
     pugi::xml_node toXml(pugi::xml_node& root);
-    static Ptr generate(const std::vector<Triangle*>& tris);
+    static Ptr fromXml(pugi::xml_node node, std::vector<Triangle>& tris);
+    static Ptr generate(std::vector<Triangle>& tris);
+
 private:
     AABB _aabb;
     bool _isRoot;
     bool _isLeaf;
-    Ptr _children[2];
-    Triangle* _tri;
+    union {
+        struct {
+            Ptr _child0;
+            Ptr _child1;
+        };
+        struct {
+            Triangle* _tri;
+            size_t _id;
+        };
+    };
 
     static size_t _progress;
     static size_t _totalTris;

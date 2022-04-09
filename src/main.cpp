@@ -27,6 +27,7 @@ int main(int argc, char const* argv[]) {
 
     path_tracer::Scene scene(inFile);
     std::cout << scene << '\n';
+    scene.importBvh(cacheFile);
     scene.generateBvh();
 
     if (!cacheFile.empty()) {

@@ -15,8 +15,8 @@ BoundingVolume::Ptr BoundingVolume::Pair::join() {
     return ptr;
 }
 
-BoundingVolume::BoundingVolume(Triangle* tri)
-    : _isRoot(true), _isLeaf(true), _children{ nullptr, nullptr }, _tri(tri) {
+BoundingVolume::BoundingVolume(Triangle* tri, size_t id)
+    : _isRoot(true), _isLeaf(true), _tri(tri), _id(id) {
     _aabb.bounds[0].x = std::min({ tri->v0.x, tri->v1.x, tri->v2.x });
     _aabb.bounds[0].y = std::min({ tri->v0.y, tri->v1.y, tri->v2.y });
     _aabb.bounds[0].z = std::min({ tri->v0.z, tri->v1.z, tri->v2.z });
@@ -28,15 +28,22 @@ BoundingVolume::BoundingVolume(Triangle* tri)
 BoundingVolume::BoundingVolume(Ptr bv0, Ptr bv1)
     : _isRoot(true),
       _isLeaf(false),
-      _children{ std::move(bv0), std::move(bv1) },
-      _tri{ nullptr },
+      _child0(std::move(bv0)),
+      _child1(std::move(bv1)),
       _aabb(bv0->_aabb, bv1->_aabb) {
-    _children[0]->_isRoot = false;
-    _children[1]->_isRoot = false;
+    _child0->_isRoot = false;
+    _child1->_isRoot = false;
 }
 
-BoundingVolume::SharedPtr BoundingVolume::makeShared(Triangle* tri) {
-    return std::make_shared<BoundingVolume::Ptr>(std::make_unique<BoundingVolume>(tri));
+BoundingVolume::~BoundingVolume() {
+    if (!_isLeaf) {
+        _child0.~unique_ptr();
+        _child1.~unique_ptr();
+    }
+}
+
+BoundingVolume::SharedPtr BoundingVolume::makeShared(Triangle* tri, size_t id) {
+    return std::make_shared<BoundingVolume::Ptr>(std::make_unique<BoundingVolume>(tri, id));
 }
 
 BoundingVolume::SharedPtr BoundingVolume::makeShared(Ptr bv0, Ptr bv1) {
@@ -63,12 +70,12 @@ float BoundingVolume::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hit
         glm::vec3 hit0;
         glm::vec3 norm0;
         Material mat0;
-        float dist0 = _children[0]->raycast(rayPos, rayDir, hit0, norm0, mat0);
+        float dist0 = _child0->raycast(rayPos, rayDir, hit0, norm0, mat0);
 
         glm::vec3 hit1;
         glm::vec3 norm1;
         Material mat1;
-        float dist1 = _children[1]->raycast(rayPos, rayDir, hit1, norm1, mat1);
+        float dist1 = _child1->raycast(rayPos, rayDir, hit1, norm1, mat1);
 
         if ((dist0 > 0.0 && dist1 > 0.0 && dist0 < dist1) || (dist0 > 0.0 && dist1 <= 0.0)) {
             hitPos = hit0;
@@ -89,30 +96,68 @@ float BoundingVolume::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hit
 pugi::xml_node BoundingVolume::toXml(pugi::xml_node& root) {
     pugi::xml_node node = root.append_child("bv");
 
-    node.append_attribute("x0") = _aabb.bounds[0].x;
-    node.append_attribute("y0") = _aabb.bounds[0].y;
-    node.append_attribute("z0") = _aabb.bounds[0].z;
-    node.append_attribute("x1") = _aabb.bounds[1].x;
-    node.append_attribute("y1") = _aabb.bounds[1].y;
-    node.append_attribute("z1") = _aabb.bounds[1].z;
-
     if (_isLeaf) {
-        pugi::xml_node tri = node.append_child("tri");
+        node.append_attribute("x0") = _aabb.bounds[0].x;
+        node.append_attribute("y0") = _aabb.bounds[0].y;
+        node.append_attribute("z0") = _aabb.bounds[0].z;
+        node.append_attribute("x1") = _aabb.bounds[1].x;
+        node.append_attribute("y1") = _aabb.bounds[1].y;
+        node.append_attribute("z1") = _aabb.bounds[1].z;
+        node.append_attribute("id") = _id;
     } else {
-        _children[0]->toXml(node);
-        _children[1]->toXml(node);
+        _child0->toXml(node);
+        _child1->toXml(node);
     }
 
     return node;
 }
 
-BoundingVolume::Ptr BoundingVolume::generate(const std::vector<Triangle*>& tris) {
+BoundingVolume::Ptr BoundingVolume::fromXml(pugi::xml_node node, std::vector<Triangle>& tris) {
+    std::vector<Ptr> children;
+    children.reserve(2);
+    for (pugi::xml_node bv : node.children("bv")) {
+        children.push_back(std::move(fromXml(bv, tris)));
+    }
+
+    if (children.size() == 0) {
+        size_t id = node.attribute("id").as_ullong();
+        if (id >= tris.size()) {
+            std::cout << "Error Loading BVH: Triangle count mismatch\n";
+            return nullptr;
+        }
+
+        Ptr bv = std::make_unique<BoundingVolume>(tris.data() + id, id);
+
+        if (node.attribute("x0").as_float() == bv->_aabb.bounds[0].x &&
+            node.attribute("y0").as_float() == bv->_aabb.bounds[0].y &&
+            node.attribute("z0").as_float() == bv->_aabb.bounds[0].z &&
+            node.attribute("x1").as_float() == bv->_aabb.bounds[1].x &&
+            node.attribute("y1").as_float() == bv->_aabb.bounds[1].y &&
+            node.attribute("z1").as_float() == bv->_aabb.bounds[1].z) {
+            return std::move(bv);
+        } else {
+            std::cout << "Error Loading BVH: Triangle Bounds Mismatch\n";
+            return nullptr;
+        }
+    } else if (children.size() == 2) {
+        if (children[0] == nullptr || children[1] == nullptr)
+            return nullptr;
+        Ptr bv = std::make_unique<BoundingVolume>(std::move(children[0]), std::move(children[1]));
+        return std::move(bv);
+    } else {
+        std::cout << "Error Loading BVH: Incorrect number of children (expected 2, got "
+                  << children.size() << ")\n";
+        return nullptr;
+    }
+}
+
+BoundingVolume::Ptr BoundingVolume::generate(std::vector<Triangle>& tris) {
     std::cout << "Generating BVH..." << std::endl;
     clock_t timeStart = std::clock();
 
     std::list<SharedPtr> bvs;
-    for (auto& tri : tris)
-        bvs.push_back(makeShared(tri));
+    for (size_t i = 0; i < tris.size(); i++)
+        bvs.push_back(makeShared(tris.data() + i, i));
 
     _progress = 0;
     _totalTris = tris.size();
@@ -176,7 +221,7 @@ BoundingVolume::Ptr BoundingVolume::topDown(std::list<SharedPtr>& bvs, size_t ta
     else if (child1 && child0)
         bvh = std::make_unique<BoundingVolume>(std::move(child0), std::move(child1));
     else
-        return nullptr; 
+        return nullptr;
     return std::move(bvh);
 }
 

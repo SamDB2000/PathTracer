@@ -26,6 +26,7 @@ private:
     std::vector<Light> _lights;
     std::vector<Sphere> _spheres;
     std::vector<Mesh> _meshes;
+    std::vector<Triangle> _tris;
     BoundingVolume::Ptr _bvh;
 
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal,
@@ -38,6 +39,7 @@ public:
     void render(const std::string& filename);
     void generateBvh();
     void exportBvh(std::ostream& os);
+    void importBvh(const std::string& filename);
     friend std::ostream& operator<<(std::ostream& os, Scene& s);
 };
 
