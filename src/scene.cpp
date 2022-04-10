@@ -204,8 +204,6 @@ void Scene::render(const std::string& filename) {
     clock_t timeEnd = clock();
     std::cout << "\rRendering 100% complete. Writing to " << filename << '\n';
     std::cout << "Render time: " << (float) (timeEnd - timeStart) / CLOCKS_PER_SEC << " (sec)\n";
-    std::cout << "Number of Ray Triangle Tests Called:    " << numRayTriangleTests << "\n";
-    std::cout << "Number of Ray Triangle Tests Initiated: " << numRayTriangleIntersections << "\n";
 
     // Write bmp header
     std::ofstream ofs(filename, std::ios::out | std::ios::binary);
