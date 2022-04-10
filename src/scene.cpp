@@ -11,6 +11,9 @@
 
 namespace path_tracer {
 
+/*
+* Initialize scene based on file input.
+*/
 Scene::Scene(const std::string& filename)
     : _backgroundColor(0.1f, 0.1f, 0.1f),
       _maxDepth(4),
@@ -90,6 +93,10 @@ Scene::Scene(const std::string& filename)
     }
 }
 
+/*
+* Overall raycast function, calls individual raycast for all spheres and BVH objects.
+* Returns minimum distance ray travels to intersection with object.
+*/
 float Scene::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal,
                      Material& mat) {
     float inf = std::numeric_limits<float>::infinity();
@@ -123,6 +130,9 @@ float Scene::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm:
     return minDist < inf ? minDist : 0.0f;
 }
 
+/* 
+* Calls raycast with default hitPos, normal, and mat perameters.
+*/
 float Scene::raycast(glm::vec3 rayPos, glm::vec3 rayDir) {
     glm::vec3 hitPos;
     glm::vec3 normal;
@@ -131,6 +141,10 @@ float Scene::raycast(glm::vec3 rayPos, glm::vec3 rayDir) {
     return dist;
 }
 
+/*
+* Raytrace function called for every ray sample.
+* Returns the color of the first point of interesection.
+*/
 glm::vec3 Scene::raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter) {
     if (iter >= _maxDepth)
         return glm::vec3(0.0f);
@@ -141,12 +155,13 @@ glm::vec3 Scene::raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter) {
     float dist = raycast(rayPos, rayDir, hitPos, normal, mat);
     if (dist > 0.0f) {
         color = mat.amb;
-        glm::vec3 shadowRayStart = hitPos + 0.001f * normal;
+        glm::vec3 shadowRayStart = hitPos + 0.0001f * normal;
         for (Light& light : _lights) {
             glm::vec3 toLight = light.pos - hitPos;
             glm::vec3 toLightNorm = glm::normalize(toLight);
 
             float shadowRay = raycast(shadowRayStart, toLightNorm);
+            // If intersection is not in shadow
             if (shadowRay == 0.0f || shadowRay > glm::distance(light.pos, hitPos)) {
                 // Diffuse
                 float diffuseFactor = std::max(glm::dot(normal, toLightNorm), 0.0f);
@@ -156,17 +171,43 @@ glm::vec3 Scene::raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter) {
                     light.spec * mat.spec *
                     std::pow(glm::dot(-rayDir, glm::reflect(toLightNorm, normal)), mat.shininess);
             }
+
+            // If the material has any specular properties, cast reflectance ray
             if (mat.spec != glm::vec3(0.0f)) {
                 color += mat.spec * 0.5f *
                          raytrace(shadowRayStart, glm::reflect(rayDir, normal), iter + 1);
+            }
+
+            // If material has diffuse properties, cast random reflectance ray
+            if (mat.diff != glm::vec3(0.0f)) {
+                glm::vec3 n1 = glm::dot(normal, rayDir) < 0 ? normal : normal *= -1;
+                // r1 = random angle b/w [0, 2pi]
+                float r1 = glm::two_pi<float>() * static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+                float r2 = static_cast<float>(rand()) / static_cast<float>(RAND_MAX); 
+                float r2s = glm::sqrt(r2); // random distance from center
+                // Coordinate system to sample hemisphere
+                glm::vec3 sw = n1;
+                glm::vec3 su = glm::normalize(glm::cross(fabs(sw.x)>.1 ? glm::vec3(0, 1, 0) : glm::vec3(1, 0, 0), sw));
+                glm::vec3 sv = glm::cross(sw, su);
+                // Random ray direction in sample hemisphere
+                glm::vec3 d = glm::normalize(su*cosf(r1)*r2s + sv*sin(r1)*r2s + sw*sqrt(1-r2));
+
+                color += mat.diff * 0.5f * raytrace(shadowRayStart, d, iter += 1);
             }
         }
     }
     return color;
 }
 
+/*
+* Render function for entire scene.
+* Calls raytrace for each sample (based on camera/image settings) and writes to bmp.
+*/
 void Scene::render(const std::string& filename) {
+    // Set clock and random number seed
     clock_t timeStart = clock();
+    srand(static_cast<unsigned>(time(0)));
+
     int width = _width * _antialias;
     int height = _height * _antialias;
     std::vector<std::vector<glm::vec3>> buffer(width, std::vector<glm::vec3>(height));
