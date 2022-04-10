@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<scene>
+    <camera maxDepth="17" antialias="3" width="400" height="400" fov="90">
+        <background r="0.100000001" g="0.100000001" b="0.100000001" />
+        <up x="0" y="1" z="0" />
+        <lookAt x="0" y="0" z="1" />
+        <eye x="0" y="0" z="150" />
+    </camera>
+    <objects>
+        <light>
+            <pos x="0" y="150" z="100" />
+            <diff r="1" g="1" b="1" />
+            <spec r="1" g="1" b="1" />
+        </light>
+        <sphere>
+            <radius value="60" />
+            <pos x="0" y="0" z="0" />
+            <material>
+                <diff r="1" g="0.330000013" b="0.330000013" />
+                <spec r="1" g="1" b="1" />
+                <shininess value="20" />
+                <amb r="0" g="0" b="0" />
+            </material>
+        </sphere>
+        <sphere>
+            <radius value="45" />
+            <pos x="0" y="50" z="-50" />
+            <material>
+                <diff r="1" g="1" b="0.330000013" />
+                <spec r="1" g="0" b="1" />
+                <shininess value="20" />
+                <amb r="0" g="0" b="0" />
+            </material>
+        </sphere>
+        <sphere>
+            <radius value="15" />
+            <pos x="50" y="0" z="0" />
+            <material>
+                <diff r="1" g="1" b="0.330000013" />
+                <spec r="1" g="0" b="1" />
+                <shininess value="20" />
+                <amb r="0" g="0" b="0" />
+            </material>
+        </sphere>
+    </objects>
+</scene>

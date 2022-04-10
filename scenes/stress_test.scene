@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<scene>
+    <camera maxDepth="2" antialias="2" width="400" height="400" fov="90">
+        <background r="0" g="0" b="0" />
+        <up x="0" y="1" z="0" />
+        <lookAt x="0" y="0" z="1" />
+        <eye x="0" y="0" z="150" />
+    </camera>
+    <objects>
+        <light>
+            <pos x="100" y="20" z="100" />
+            <diff r="0.5" g="0.5" b="0.5" />
+            <spec r="0.5" g="0.5" b="0.5" />
+        </light>
+        <mesh type="stl" filename="models/GooseHydra.stl">
+            <material>
+                <diff r="0.703800023" g="0.270480007" b="0.0828000009" />
+                <spec r="0.256776989" g="0.137621999" b="0.0860140026" />
+                <shininess value="12" />
+                <amb r="0.191249996" g="0.0734999999" b="0.0225000009" />
+            </material>
+        </mesh>
+        <mesh type="quad">
+            <material>
+                <diff r="1" g="0" b="0" />
+                <spec r="1" g="1" b="1" />
+                <shininess value="10" />
+                <amb r="0" g="0" b="0" />
+            </material>
+            <verts>
+                <v x="-150" y="-150" z="-150" />
+                <v x="-150" y="150" z="-150" />
+                <v x="150" y="-150" z="-150" />
+            </verts>
+        </mesh>
+        <mesh type="quad">
+            <material>
+                <diff r="0" g="1" b="0" />
+                <spec r="1" g="1" b="1" />
+                <shininess value="10" />
+                <amb r="0" g="0" b="0" />
+            </material>
+            <verts>
+                <v x="150" y="-150" z="150" />
+                <v x="150" y="-150" z="-150" />
+                <v x="150" y="150" z="150" />
+            </verts>
+        </mesh>
+        <mesh type="quad">
+            <material>
+                <diff r="0" g="0" b="1" />
+                <spec r="1" g="1" b="1" />
+                <shininess value="10" />
+                <amb r="0" g="0" b="0" />
+            </material>
+            <verts>
+                <v x="-150" y="-150" z="-150" />
+                <v x="-150" y="-150" z="150" />
+                <v x="-150" y="150" z="-150" />
+            </verts>
+        </mesh>
+        <mesh type="quad">
+            <material>
+                <diff r="1" g="1" b="0" />
+                <spec r="1" g="1" b="1" />
+                <shininess value="10" />
+                <amb r="0" g="0" b="0" />
+            </material>
+            <verts>
+                <v x="-150" y="-150" z="150" />
+                <v x="-150" y="-150" z="-150" />
+                <v x="150" y="-150" z="150" />
+            </verts>
+        </mesh>
+        <mesh type="quad">
+            <material>
+                <diff r="0" g="1" b="1" />
+                <spec r="1" g="1" b="1" />
+                <shininess value="10" />
+                <amb r="0" g="0" b="0" />
+            </material>
+            <verts>
+                <v x="-150" y="150" z="150" />
+                <v x="150" y="150" z="150" />
+                <v x="-150" y="150" z="-150" />
+            </verts>
+        </mesh>
+    </objects>
+</scene>

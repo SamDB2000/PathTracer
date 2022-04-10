@@ -1,23 +1,27 @@
 #include <mesh.h>
 #include <fstream>
+#include <list>
 #include <iostream>
-#include <atomic>
 
 namespace path_tracer {
 
-extern uint64_t numRayTriangleTests;
-extern uint64_t numRayTriangleIntersections;
+Mesh::Mesh(const std::string& filename) {
+    loadStl(filename);
+}
+
+Mesh::Mesh(Material m, const std::vector<Triangle>& tris) : m(m), tris(tris) {
+}
+
+Mesh::Mesh(const Mesh& mesh) : m(mesh.m), tris(mesh.tris) {
+}
 
 float Mesh::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal) {
     float minDist = std::numeric_limits<float>::infinity();
     bool hit = false;
 
-    numRayTriangleTests++;
     if (AABbox.intersect(rayPos, rayDir)) {
-        numRayTriangleIntersections++;
         // This seems to infer it works since that prints very often.
         //std::cout << "intersection found in AABB\n";
-        
         // TODO: Replace with BVH walk
         for (Triangle& tri : tris) {
             glm::vec3 localHitPos;
@@ -38,7 +42,10 @@ float Mesh::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::
         return 0.0f;
 }
 
-void Mesh::loadStl(std::string filename) {
+void Mesh::loadStl(const std::string& filename) {
+    if (filename.empty())
+        return;
+
     std::ifstream ifs(filename, std::ios::in | std::ios::binary);
     char header[80];
     ifs.read(header, sizeof(header));
@@ -86,6 +93,68 @@ void Mesh::loadStl(std::string filename) {
         AABbox.bounds[1] = max_bound;
         tris.push_back(t);
     }
+    this->filename = filename;
+}
+
+pugi::xml_node Mesh::toXml(pugi::xml_node& root) {
+    pugi::xml_node node = root.append_child("mesh");
+    if (!filename.empty()) {
+        node.append_attribute("type") = "stl";
+        node.append_attribute("filename") = filename.c_str();
+    } else {
+        pugi::xml_node trisNode = node.append_child("tris");
+        for (auto& tri : tris)
+            tri.toXml(trisNode);
+    }
+    m.toXml(node);
+    return node;
+}
+
+Mesh Mesh::fromXml(pugi::xml_node node) {
+    Mesh mesh;
+    std::string type = node.attribute("type").value();
+    if (type == "stl") {
+        mesh.loadStl(node.attribute("filename").value());
+    } else if (type == "quad") {
+        std::vector<glm::vec3> verts;
+        verts.reserve(4);
+        pugi::xml_node vertsNode = node.child("verts");
+        for (auto& vert : vertsNode.children()) {
+            if (std::string(vert.name()) != "v")
+                continue;
+            glm::vec3 v;
+            v.x = vert.attribute("x").as_float();
+            v.y = vert.attribute("y").as_float();
+            v.z = vert.attribute("z").as_float();
+            verts.push_back(v);
+        }
+        if (verts.size() == 3)
+            verts.push_back(verts[1] + verts[2] - verts[0]);
+        if (verts.size() == 4) {
+            Triangle t;
+            t.v0 = verts[2];
+            t.v1 = verts[1];
+            t.v2 = verts[0];
+            mesh.tris.push_back(t);
+
+            t.v0 = verts[1];
+            t.v1 = verts[2];
+            t.v2 = verts[3];
+            mesh.tris.push_back(t);
+        }
+    } else {
+        pugi::xml_node trisNode = node.child("tris");
+        for (auto& triNode : trisNode.children()) {
+            if (triNode.name() != "tri")
+                continue;
+            mesh.tris.push_back(Triangle::fromXml(triNode));
+        }
+    }
+    Material mat = Material::fromXml(node.child("material"));
+    mesh.m = mat;
+    for (auto& tri : mesh.tris)
+        tri.m = mat;
+    return mesh;
 }
 
 }  // namespace path_tracer

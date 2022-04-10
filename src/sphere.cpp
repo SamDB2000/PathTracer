@@ -29,4 +29,31 @@ float Sphere::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm
     return t;
 }
 
+pugi::xml_node Sphere::toXml(pugi::xml_node& root) {
+    pugi::xml_node node = root.append_child("sphere");
+
+    node.append_child("radius").append_attribute("value") = radius;
+    pugi::xml_node posNode = node.append_child("pos");
+    posNode.append_attribute("x") = pos.x;
+    posNode.append_attribute("y") = pos.y;
+    posNode.append_attribute("z") = pos.z;
+
+    m.toXml(node);
+    return node;
+}
+
+Sphere Sphere::fromXml(pugi::xml_node node) {
+    Sphere s;
+
+    s.radius = node.child("radius").attribute("value").as_float();
+
+    pugi::xml_node posNode = node.child("pos");
+    s.pos.x = posNode.attribute("x").as_float();
+    s.pos.y = posNode.attribute("y").as_float();
+    s.pos.z = posNode.attribute("z").as_float();
+
+    s.m = Material::fromXml(node.child("material"));
+    return s;
+}
+
 }  // namespace path_tracer
