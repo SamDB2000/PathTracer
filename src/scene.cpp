@@ -8,7 +8,7 @@
 #include <sstream>
 #include <list>
 #include <iostream>
-#include <random>
+#include <array>
 
 namespace path_tracer {
 
@@ -24,7 +24,8 @@ Scene::Scene(const std::string& filename)
       _fov(90.0f),
       _up(0.0f, 1.0f, 0.0f),
       _lookAt(0.0f, 0.0, 1.0f),
-      _eye(0.0f, 0.0f, 150.0f) {
+      _eye(0.0f, 0.0f, 150.0f),
+      _backwardsDepth(16) {
     pugi::xml_document doc;
     doc.load_file(filename.c_str());
     pugi::xml_node root = doc.child("scene");
@@ -210,6 +211,16 @@ glm::vec3 Scene::randHemi(glm::vec3 normal) {
 }
 
 /*
+ * Returns a point on the unit sphere
+ */
+glm::vec3 Scene::randSphere() {
+    glm::vec3 v = randHemi(glm::vec3(0.0f, 1.0f, 0.0f));
+    if (rand() % 2)
+        v = -v;
+    return v;
+}
+
+/*
  * Render function for entire scene.
  * Calls raytrace for each sample (based on camera/image settings) and writes to bmp.
  */
@@ -231,27 +242,93 @@ void Scene::render(const std::string& filename) {
     float rad_fov = _fov * glm::pi<float>() / 180.0;
     float focalLength = 1.0f / glm::tan(rad_fov / 2.0f);
     glm::vec3 ll = _eye + focalLength * l - aspectRatio * v - u;
+    glm::vec3 lr = _eye + focalLength * l + aspectRatio * v - u;
+    glm::vec3 ul = _eye + focalLength * l - aspectRatio * v + u;
+    glm::vec3 ur = _eye + focalLength * l + aspectRatio * v + u;
 
     size_t completed = 0;
 
+    // Forward path tracing
 #pragma omp parallel for
     for (int i = 0; i < width * height; i++) {
         float x = i / width;
         float y = i % width;
-        glm::vec3 p =
-            ll + 2.0f * aspectRatio * v * ((float) x / (float)width) + 2.0f * u * ((float) y / (float)height);
+        glm::vec3 p = ll + 2.0f * aspectRatio * v * ((float) x / (float) width) +
+                      2.0f * u * ((float) y / (float) height);
         glm::vec3 ray = glm::normalize(p - _eye);
         buffer[x][y] = glm::clamp(raytrace(_eye, ray), glm::vec3(0.0f), glm::vec3(1.0f));
 
 #pragma omp atomic
         completed++;
         if (completed % 500 == 0) {
-            int progress = 10000 * completed / (width * height);
+            int progress = 10000 * completed / (width * height) / 2;
             int per = progress / 100;
             int dec = progress % 100;
 #pragma omp critical
             std::cout << "\rRendering " << per << "." << dec << "% complete  " << std::flush;
         }
+    }
+
+    std::vector<std::array<glm::vec3, 3>> backwardsRays;
+    backwardsRays.reserve(_antialias * _antialias * width * height * _lights.size());
+    for (auto& light : _lights) {
+        for (int i = 0; i < width * height; i++) {
+            glm::vec3 v = randSphere();
+            glm::vec3 color =
+                light.spec * (1.0f / (_antialias * _antialias * _antialias * _antialias));
+            backwardsRays.push_back(std::array<glm::vec3, 3>{ light.pos, v, color });
+        }
+    }
+
+    // Backward path tracing
+    for (int i = 0; i < _backwardsDepth; i++) {
+#pragma omp parallel for
+        for (int j = 0; j < backwardsRays.size(); j++) {
+            auto& ray = backwardsRays[j];
+            if (ray[1] == glm::vec3(0.0f))
+                continue;
+            glm::vec3 hitPos;
+            glm::vec3 normal;
+            Material mat;
+            float t = raycast(ray[0], ray[1], hitPos, normal, mat);
+            if (t > 0.0f) {
+                glm::vec3 adjHitPos = hitPos + 0.0001f * normal;
+                glm::vec3 toCamera = glm::normalize(_eye - adjHitPos);
+                t = raycast(adjHitPos, toCamera);
+                if (t <= 0 || t >= glm::distance(adjHitPos, _eye)) {
+                    glm::vec3 p = lr - ll;
+                    glm::vec3 q = ul - ll;
+                    glm::vec3 tmp1 = glm::cross(toCamera, q);
+                    float dot1 = glm::dot(tmp1, p);
+                    if (std::abs(dot1) < 0.0001f)
+                        continue;
+                    float f = 1.0f / dot1;
+                    glm::vec3 s = adjHitPos - ll;
+                    float u = f * glm::dot(s, tmp1);
+                    if (u < 0.0f || u > 1.0f)
+                        continue;
+                    glm::vec3 tmp2 = glm::cross(s, p);
+                    float v = f * glm::dot(toCamera, tmp2);
+                    if (v < 0.0f || v > 1.0f)
+                        continue;
+
+                    int x = (int) (u * width);
+                    int y = (int) (v * height);
+                    buffer[x][y] += std::max(glm::dot(normal, toCamera), 0.0f) * ray[2] * mat.diff;
+                }
+
+                ray[2] =
+                    0.5f * ray[2] + 0.5f * mat.diff * std::max(glm::dot(normal, -ray[1]), 0.0f);
+                ray[0] = adjHitPos;
+                ray[1] = glm::reflect(ray[1], normal);
+            } else {
+                ray[1] = glm::vec3(0.0f);
+            }
+        }
+        int progress = 10000 * i / _backwardsDepth / 2;
+        int per = 50 + progress / 100;
+        int dec = progress % 100;
+        std::cout << "\rRendering " << per << "." << dec << "% complete  " << std::flush;
     }
     clock_t timeEnd = clock();
     std::cout << "\rRendering 100% complete. Writing to " << filename << '\n';
