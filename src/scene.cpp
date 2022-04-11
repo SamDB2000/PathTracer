@@ -228,7 +228,8 @@ void Scene::render(const std::string& filename) {
     glm::vec3 u = glm::cross(v, l);
 
     float aspectRatio = (float) width / height;
-    float focalLength = 1.0f / glm::tan(_fov / 2.0f);
+    float rad_fov = _fov * glm::pi<float>() / 180.0;
+    float focalLength = 1.0f / glm::tan(rad_fov / 2.0f);
     glm::vec3 ll = _eye + focalLength * l - aspectRatio * v - u;
 
     size_t completed = 0;
@@ -238,7 +239,7 @@ void Scene::render(const std::string& filename) {
         float x = i / width;
         float y = i % width;
         glm::vec3 p =
-            ll + 2.0f * aspectRatio * v * ((float) x / width) + 2.0f * u * ((float) y / height);
+            ll + 2.0f * aspectRatio * v * ((float) x / (float)width) + 2.0f * u * ((float) y / (float)height);
         glm::vec3 ray = glm::normalize(p - _eye);
         buffer[x][y] = glm::clamp(raytrace(_eye, ray), glm::vec3(0.0f), glm::vec3(1.0f));
 
