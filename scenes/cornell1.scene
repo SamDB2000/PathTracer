@@ -3,7 +3,7 @@
     <camera maxDepth="3" antialias="3" width="800" height="800" fov="90">
         <background r="0" g="0" b="0" />
         <up x="0" y="1" z="0" />
-        <lookAt x="0" y="0" z="1" />
+        <lookAt x="0" y="0" z="0" />
         <eye x="0" y="0" z="150" />
     </camera>
     <objects>
