@@ -181,6 +181,7 @@ glm::vec3 Scene::raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter, int numI
             if (numIndirect > 0)
                 indirectColor /= numIndirect;
             color += indirectColor;
+
             // If the material has any specular properties, cast reflectance ray
             if (mat.spec != glm::vec3(0.0f)) {
                 color += mat.spec * raytrace(adjHitPos, glm::reflect(rayDir, normal), iter + 1,

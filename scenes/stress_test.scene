@@ -1,29 +1,29 @@
 <?xml version="1.0"?>
 <scene>
-    <camera maxDepth="2" antialias="2" width="400" height="400" fov="90">
+    <camera maxDepth="3" antialias="2" width="400" height="400" fov="75">
         <background r="0" g="0" b="0" />
         <up x="0" y="1" z="0" />
         <lookAt x="0" y="-100" z="0" />
-        <eye x="0" y="0" z="150" />
+        <eye x="30" y="-30" z="150" />
     </camera>
     <objects>
         <light>
             <pos x="100" y="20" z="100" />
-            <diff r="0.5" g="0.5" b="0.5" />
-            <spec r="0.5" g="0.5" b="0.5" />
+            <diff r="0.7" g="0.7" b="0.7" />
+            <spec r="0.7" g="0.7" b="0.7" />
         </light>
         <mesh type="stl" filename="models/GooseHydra.stl">
             <material>
-                <diff r="0.703800023" g="0.270480007" b="0.0828000009" />
-                <spec r="0.256776989" g="0.137621999" b="0.0860140026" />
-                <shininess value="12" />
-                <amb r="0.191249996" g="0.0734999999" b="0.0225000009" />
+                <diff r="0.98" g="0.8" b="0.85" />
+                <spec r="0.25" g="0.25" b="0.25" />
+                <shininess value="128" />
+                <amb r="0.19" g="0.07" b="0.02" />
             </material>
         </mesh>
         <mesh type="quad">
             <material>
-                <diff r="1" g="0" b="0" />
-                <spec r="1" g="1" b="1" />
+                <diff r="0.85" g="0.1" b="0.25" />
+                <spec r="0.2" g="0.03" b="0.06" />
                 <shininess value="10" />
                 <amb r="0" g="0" b="0" />
             </material>
@@ -35,8 +35,8 @@
         </mesh>
         <mesh type="quad">
             <material>
-                <diff r="0" g="1" b="0" />
-                <spec r="1" g="1" b="1" />
+                <diff r="0.0" g="0.3" b="0.96" />
+                <spec r="0.0" g="0.1" b="0.3" />
                 <shininess value="10" />
                 <amb r="0" g="0" b="0" />
             </material>
@@ -48,8 +48,8 @@
         </mesh>
         <mesh type="quad">
             <material>
-                <diff r="0" g="0" b="1" />
-                <spec r="1" g="1" b="1" />
+                <diff r="0" g="0.99" b="0.5" />
+                <spec r="0" g="0.2" b="0.13" />
                 <shininess value="10" />
                 <amb r="0" g="0" b="0" />
             </material>
@@ -61,8 +61,8 @@
         </mesh>
         <mesh type="quad">
             <material>
-                <diff r="1" g="1" b="0" />
-                <spec r="1" g="1" b="1" />
+                <diff r="0.8" g="0.8" b="0.75" />
+                <spec r="0.0" g="0.0" b="0.0" />
                 <shininess value="10" />
                 <amb r="0" g="0" b="0" />
             </material>
@@ -74,8 +74,8 @@
         </mesh>
         <mesh type="quad">
             <material>
-                <diff r="0" g="1" b="1" />
-                <spec r="1" g="1" b="1" />
+                <diff r="0.8" g="0.8" b="0.7" />
+                <spec r="0.1" g="0.1" b="0.1" />
                 <shininess value="10" />
                 <amb r="0" g="0" b="0" />
             </material>
