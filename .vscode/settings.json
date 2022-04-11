@@ -75,6 +75,7 @@
     "unordered_map": "cpp",
     "xhash": "cpp",
     "queue": "cpp",
-    "deque": "cpp"
+    "deque": "cpp",
+    "random": "cpp"
   },
 }

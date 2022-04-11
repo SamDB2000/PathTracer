@@ -32,7 +32,8 @@ private:
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal,
                   Material& mat);
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir);
-    glm::vec3 raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter = 0);
+    glm::vec3 raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter = 0, int numIndirect = 32);
+    glm::vec3 randHemi(glm::vec3 normal);
 
 public:
     Scene(const std::string& filename);
