@@ -13,6 +13,8 @@ struct Triangle {
     glm::vec3 v2;
 
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal);
+    pugi::xml_node toXml(pugi::xml_node& root);
+    static Triangle fromXml(pugi::xml_node node);
 };
 
 }  // namespace path_tracer

@@ -1,184 +1,103 @@
 #include <scene.h>
-#include <fstream>
-#include <sstream>
 #include <bitmap_header.h>
 #include <omp.h>
 #include <ctime>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/euler_angles.hpp>
+#include <fstream>
+#include <sstream>
+#include <list>
+#include <iostream>
+#include <random>
 
 namespace path_tracer {
 
-uint64_t numRayTriangleTests = 0;
-uint64_t numRayTriangleIntersections = 0;
-uint64_t numPrimaryRays = 0;
-
-void Scene::readVec(std::ifstream& ifs, glm::vec3& vec) {
-    ifs >> vec.x >> vec.y >> vec.z;
-}
-
-void Scene::parseMatProp(std::ifstream& ifs, const std::string& str, Material& m) {
-    if (str == "DIFF")
-        readVec(ifs, m.diff);
-    else if (str == "SPEC")
-        readVec(ifs, m.spec);
-    else if (str == "AMB")
-        readVec(ifs, m.amb);
-    else if (str == "SHININESS")
-        ifs >> m.shininess;
-}
-
-std::string Scene::parseLight(std::ifstream& ifs) {
-    Light l;
-    std::string str;
-    while (ifs) {
-        ifs >> str;
-        if (str == "POS")
-            readVec(ifs, l.pos);
-        else if (str == "DIFF")
-            readVec(ifs, l.diff);
-        else if (str == "SPEC")
-            readVec(ifs, l.spec);
-        else if (str.substr(0, 2) == "//")
-            std::getline(ifs, str);
-        else
-            break;
-    }
-    _lights.push_back(l);
-    // _spheres.push_back(Sphere{
-    //     Material{ glm::vec3(0.0f), glm::vec3(0.0f), 0.0f, glm::vec3(l.diff) }, l.pos, 10.0f });
-    return str;
-}
-
-std::string Scene::parseSphere(std::ifstream& ifs) {
-    Sphere s;
-    std::string str;
-    while (ifs) {
-        ifs >> str;
-        if (str == "POS")
-            readVec(ifs, s.pos);
-        else if (str == "RADIUS")
-            ifs >> s.radius;
-        else if (str == "DIFF" || str == "SPEC" || str == "AMB" || str == "SHININESS")
-            parseMatProp(ifs, str, s.m);
-        else if (str.substr(0, 2) == "//")
-            std::getline(ifs, str);
-        else
-            break;
-    }
-    _spheres.push_back(s);
-    return str;
-}
-
-std::string Scene::parseQuad(std::ifstream& ifs) {
-    Material m;
-    std::vector<glm::vec3> verts;
-    verts.reserve(4);
-    std::string str;
-    while (ifs) {
-        ifs >> str;
-        if (str == "POS") {
-            glm::vec3 v;
-            readVec(ifs, v);
-            verts.push_back(v);
-        } else if (str == "DIFF" || str == "SPEC" || str == "AMB" || str == "SHININESS") {
-            parseMatProp(ifs, str, m);
-        } else if (str.substr(0, 2) == "//") {
-            std::getline(ifs, str);
-        } else {
-            break;
-        }
-    }
-    if (verts.size() == 3)
-        verts.push_back(verts[1] + verts[2] - verts[0]);
-    if (verts.size() == 4) {
-        // Sorry for ugly code (will hopefully come up with better way later)
-        // Just finds the min/max bounds for the AABB
-        float max_x = verts[0].x; float min_x = verts[0].x;
-        float max_y = verts[0].y; float min_y = verts[0].y;
-        float max_z = verts[0].z; float min_z = verts[0].z;
-        for (int i = 0; i < 4; i++) {
-            if (max_x < verts[i].x) max_x = verts[i].x;
-            if (max_y < verts[i].y) max_y = verts[i].y;
-            if (max_z < verts[i].z) max_z = verts[i].z;
-            if (min_x > verts[i].x) min_x = verts[i].x;
-            if (min_y > verts[i].y) min_y = verts[i].y;
-            if (min_z > verts[i].z) min_z = verts[i].z;
-        }
-        
-        AABB box = AABB(glm::vec3(min_x, min_y, min_z), glm::vec3(max_x, max_y, max_z));
-        
-        _meshes.emplace_back(Mesh{ m, box,
-                                   { Triangle{ m, verts[2], verts[1], verts[0] },
-                                     Triangle{ m, verts[1], verts[2], verts[3] } } });
-    }
-    return str;
-}
-
-std::string Scene::parseModel(std::ifstream& ifs) {
-    Mesh m;
-    std::string str;
-    while (ifs) {
-        ifs >> str;
-        if (str == "STL") {
-            ifs >> str;
-            m.loadStl(str);
-            // Bounds are correct
-            /*std::cout << "Mesh loaded with bounds: (" << m.AABbox.bounds[0].x << ", "
-                      << m.AABbox.bounds[0].y << ", " << m.AABbox.bounds[0].z << ")\n";
-            std::cout << m.AABbox.bounds[1].x << ", " << m.AABbox.bounds[1].y << ", "
-                      << m.AABbox.bounds[1].z << ")\n";*/
-        } else if (str == "DIFF" || str == "SPEC" || str == "AMB" || str == "SHININESS") {
-            parseMatProp(ifs, str, m.m);
-        } else if (str.substr(0, 2) == "//") {
-            std::getline(ifs, str);
-        } else {
-            break;
-        }
-    }
-    _meshes.push_back(m);
-    return str;
-}
-
+/*
+ * Initialize scene based on file input.
+ */
 Scene::Scene(const std::string& filename)
     : _backgroundColor(0.1f, 0.1f, 0.1f),
       _maxDepth(4),
       _antialias(1),
       _width(400),
       _height(400),
-      _fov(90.0f) {
-    std::ifstream ifs(filename);
-    std::string str;
-    ifs >> str;
+      _fov(90.0f),
+      _up(0.0f, 1.0f, 0.0f),
+      _lookAt(0.0f, 0.0, 1.0f),
+      _eye(0.0f, 0.0f, 150.0f) {
+    pugi::xml_document doc;
+    doc.load_file(filename.c_str());
+    pugi::xml_node root = doc.child("scene");
 
-    while (ifs) {
-        if (str == "LIGHT")
-            str = parseLight(ifs);
-        else if (str == "SPHERE")
-            str = parseSphere(ifs);
-        else if (str == "QUAD")
-            str = parseQuad(ifs);
-        else if (str == "MODEL")
-            str = parseModel(ifs);
-        else if (str == "BACKGROUND")
-            ifs >> _backgroundColor.r >> _backgroundColor.g >> _backgroundColor.b >> str;
-        else if (str == "ANTIALIAS")
-            ifs >> _antialias >> str;
-        else if (str == "MAXDEPTH")
-            ifs >> _maxDepth >> str;
-        else if (str == "RESOLUTION")
-            ifs >> _width >> _height >> str;
-        else if (str == "FOV")
-            ifs >> _fov >> str;
-        else if (str.substr(0, 2) == "//") {
-            std::getline(ifs, str);
-            ifs >> str;
+    // Load Camera Settings
+    pugi::xml_node camera = root.child("camera");
+    for (auto& attr : camera.attributes()) {
+        std::string name = attr.name();
+        if (name == "maxDepth")
+            _maxDepth = attr.as_uint();
+        else if (name == "antialias")
+            _antialias = attr.as_uint();
+        else if (name == "width")
+            _width = attr.as_uint();
+        else if (name == "height")
+            _height = attr.as_uint();
+        else if (name == "fov")
+            _fov = attr.as_float();
+        else
+            std::cout << "Unknown attribute in \"camera\": \"" << name << "\"" << std::endl;
+    }
+    for (auto& child : camera.children()) {
+        std::string name = child.name();
+        if (name == "background") {
+            _backgroundColor.r = child.attribute("r").as_float();
+            _backgroundColor.g = child.attribute("g").as_float();
+            _backgroundColor.b = child.attribute("b").as_float();
+        } else if (name == "up") {
+            _up.x = child.attribute("x").as_float();
+            _up.y = child.attribute("y").as_float();
+            _up.z = child.attribute("z").as_float();
+        } else if (name == "lookAt") {
+            _lookAt.x = child.attribute("x").as_float();
+            _lookAt.y = child.attribute("y").as_float();
+            _lookAt.z = child.attribute("z").as_float();
+        } else if (name == "eye") {
+            _eye.x = child.attribute("x").as_float();
+            _eye.y = child.attribute("y").as_float();
+            _eye.z = child.attribute("z").as_float();
         } else {
-            ifs >> str;
+            std::cout << "Unknown child in \"camera\": \"" << name << "\"" << std::endl;
         }
+    }
+
+    // Load Object Settings
+    pugi::xml_node objects = root.child("objects");
+    for (auto& child : objects.children()) {
+        std::string name = child.name();
+        if (name == "light")
+            _lights.push_back(Light::fromXml(child));
+        else if (name == "sphere")
+            _spheres.push_back(Sphere::fromXml(child));
+        else if (name == "mesh")
+            _meshes.push_back(Mesh::fromXml(child));
+        else
+            std::cout << "Unknown child in \"objects\": \"" << name << "\"" << std::endl;
+    }
+
+    size_t numTris = 0;
+    for (auto& mesh : _meshes)
+        numTris += mesh.tris.size();
+    _tris.reserve(numTris);
+    for (auto& mesh : _meshes) {
+        for (auto& tri : mesh.tris)
+            _tris.push_back(tri);
+        mesh.tris.clear();
     }
 }
 
+/*
+ * Overall raycast function, calls individual raycast for all spheres and BVH objects.
+ * Returns minimum distance ray travels to intersection with object.
+ */
 float Scene::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal,
                      Material& mat) {
     float inf = std::numeric_limits<float>::infinity();
@@ -195,21 +114,26 @@ float Scene::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm:
             mat = sphere.m;
         }
     }
-    for (Mesh& mesh : _meshes) {
+
+    if (_bvh) {
         glm::vec3 localHitPos;
         glm::vec3 localNormal;
-        float dist = mesh.raycast(rayPos, rayDir, localHitPos, localNormal);
+        Material localMat;
+        float dist = _bvh->raycast(rayPos, rayDir, localHitPos, localNormal, localMat);
         if (dist > 0.0f && dist < minDist) {
             minDist = dist;
             hitPos = localHitPos;
             normal = localNormal;
-            mat = mesh.m;
+            mat = localMat;
         }
     }
 
     return minDist < inf ? minDist : 0.0f;
 }
 
+/*
+ * Calls raycast with default hitPos, normal, and mat perameters.
+ */
 float Scene::raycast(glm::vec3 rayPos, glm::vec3 rayDir) {
     glm::vec3 hitPos;
     glm::vec3 normal;
@@ -218,7 +142,11 @@ float Scene::raycast(glm::vec3 rayPos, glm::vec3 rayDir) {
     return dist;
 }
 
-glm::vec3 Scene::raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter) {
+/*
+ * Raytrace function called for every ray sample.
+ * Returns the color of the first point of interesection.
+ */
+glm::vec3 Scene::raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter, int numIndirect) {
     if (iter >= _maxDepth)
         return glm::vec3(0.0f);
     glm::vec3 color = _backgroundColor;
@@ -228,49 +156,81 @@ glm::vec3 Scene::raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter) {
     float dist = raycast(rayPos, rayDir, hitPos, normal, mat);
     if (dist > 0.0f) {
         color = mat.amb;
-        glm::vec3 shadowRayStart = hitPos + 0.001f * normal;
+        glm::vec3 adjHitPos = hitPos + 0.0001f * normal;
         for (Light& light : _lights) {
             glm::vec3 toLight = light.pos - hitPos;
             glm::vec3 toLightNorm = glm::normalize(toLight);
 
-            float shadowRay = raycast(shadowRayStart, toLightNorm);
+            float shadowRay = raycast(adjHitPos, toLightNorm);
+            // If intersection is not in shadow
             if (shadowRay == 0.0f || shadowRay > glm::distance(light.pos, hitPos)) {
-                // Diffuse
-                float diffuseFactor = std::max(glm::dot(normal, toLightNorm), 0.0f);
-                color += light.diff * mat.diff * diffuseFactor;
-                // Specular
-                color +=
-                    light.spec * mat.spec *
+                // Phong Model
+                float diffFactor = std::max(glm::dot(normal, toLightNorm), 0.0f);
+                float specFactor =
                     std::pow(glm::dot(-rayDir, glm::reflect(toLightNorm, normal)), mat.shininess);
+                color += light.diff * mat.diff * diffFactor + light.spec * mat.spec * specFactor;
             }
-            if (mat.diff != glm::vec3(0.0f)) {
-                color += mat.spec * 0.5f *
-                         raytrace(shadowRayStart, glm::reflect(rayDir, normal), iter + 1);
+
+            // indirect illumination
+            glm::vec3 indirectColor(0.0f);
+            for (int i = 0; i < numIndirect; i++) {
+                glm::vec3 v = randHemi(normal);
+                indirectColor +=
+                    glm::dot(normal, v) * raytrace(adjHitPos, v, iter + 1, numIndirect / 2);
+            }
+            if (numIndirect > 0)
+                indirectColor /= numIndirect;
+            color += indirectColor;
+            // If the material has any specular properties, cast reflectance ray
+            if (mat.spec != glm::vec3(0.0f)) {
+                color += mat.spec * raytrace(adjHitPos, glm::reflect(rayDir, normal), iter + 1,
+                                             numIndirect / 2);
             }
         }
     }
     return color;
 }
 
+/*
+ * Returns a point on the unit hemisphere, centered on the normal
+ */
+glm::vec3 Scene::randHemi(glm::vec3 normal) {
+    // r1 = random angle b/w [0, 2pi]
+    float r1 = glm::two_pi<float>() * static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    float r2 = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    float r2s = glm::sqrt(r2);  // random distance from center
+    // Coordinate system to sample hemisphere
+    glm::vec3 sw = normal;
+    glm::vec3 su = glm::normalize(glm::cross(
+        fabs(sw.x) > 0.1f ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::vec3(1.0f, 0.0f, 0.0f), sw));
+    glm::vec3 sv = glm::cross(sw, su);
+    // Random ray direction in sample hemisphere
+    glm::vec3 d = glm::normalize(su * cosf(r1) * r2s + sv * sin(r1) * r2s + sw * sqrt(1 - r2));
+    return d;
+}
+
+/*
+ * Render function for entire scene.
+ * Calls raytrace for each sample (based on camera/image settings) and writes to bmp.
+ */
 void Scene::render(const std::string& filename) {
+    // Set clock and random number seed
     clock_t timeStart = clock();
+    srand(static_cast<unsigned>(time(0)));
+
     int width = _width * _antialias;
     int height = _height * _antialias;
     std::vector<std::vector<glm::vec3>> buffer(width, std::vector<glm::vec3>(height));
 
-    // Camera Params
-    glm::vec3 up(0.0f, 1.0f, 0.0f);
-    glm::vec3 lookAt(0.0f, 0.0, -1.0f);
-    glm::vec3 eye(0.0f, 0.0f, 150.0f);
-
     // Gramm-Schmidt orthonormalization
-    glm::vec3 l = glm::normalize(lookAt - eye);
-    glm::vec3 v = glm::normalize(glm::cross(l, up));
+    glm::vec3 l = glm::normalize(_lookAt - _eye);
+    glm::vec3 v = glm::normalize(glm::cross(l, _up));
     glm::vec3 u = glm::cross(v, l);
 
     float aspectRatio = (float) width / height;
-    float focalLength = 1.0f / glm::tan(_fov / 2.0f);
-    glm::vec3 ll = eye + focalLength * l - aspectRatio * v - u;
+    float rad_fov = _fov * glm::pi<float>() / 180.0;
+    float focalLength = 1.0f / glm::tan(rad_fov / 2.0f);
+    glm::vec3 ll = _eye + focalLength * l - aspectRatio * v - u;
 
     size_t completed = 0;
 
@@ -279,9 +239,9 @@ void Scene::render(const std::string& filename) {
         float x = i / width;
         float y = i % width;
         glm::vec3 p =
-            ll + 2.0f * aspectRatio * v * ((float) x / width) + 2.0f * u * ((float) y / height);
-        glm::vec3 ray = glm::normalize(p - eye);
-        buffer[x][y] = glm::clamp(raytrace(eye, ray), glm::vec3(0.0f), glm::vec3(1.0f));
+            ll + 2.0f * aspectRatio * v * ((float) x / (float)width) + 2.0f * u * ((float) y / (float)height);
+        glm::vec3 ray = glm::normalize(p - _eye);
+        buffer[x][y] = glm::clamp(raytrace(_eye, ray), glm::vec3(0.0f), glm::vec3(1.0f));
 
 #pragma omp atomic
         completed++;
@@ -296,8 +256,6 @@ void Scene::render(const std::string& filename) {
     clock_t timeEnd = clock();
     std::cout << "\rRendering 100% complete. Writing to " << filename << '\n';
     std::cout << "Render time: " << (float) (timeEnd - timeStart) / CLOCKS_PER_SEC << " (sec)\n";
-    std::cout << "Number of Ray Triangle Tests Called:    " << numRayTriangleTests << "\n";
-    std::cout << "Number of Ray Triangle Tests Initiated: " << numRayTriangleIntersections << "\n";
 
     // Write bmp header
     std::ofstream ofs(filename, std::ios::out | std::ios::binary);
@@ -305,7 +263,7 @@ void Scene::render(const std::string& filename) {
     ofs.write(bmpHead.rawData, sizeof(bmpHead));
     for (int i = 0; i < _height; i++) {
         for (int j = 0; j < _width; j++) {
-            glm::vec3 color;
+            glm::vec3 color(0.0f);
             for (int r = 0; r < _antialias; r++)
                 for (int c = 0; c < _antialias; c++)
                     color += buffer[_antialias * j + r][_antialias * i + c];
@@ -319,16 +277,41 @@ void Scene::render(const std::string& filename) {
             ofs.write((char*) &r, sizeof(uint8_t));
         }
     }
-    std::cout << "Done writing\n";   
+    std::cout << "Done writing\n";
+}
+
+void Scene::generateBvh() {
+    if (_bvh)
+        return;
+    _bvh = std::move(BoundingVolume::generate(_tris));
+}
+
+void Scene::exportBvh(std::ostream& os) {
+    pugi::xml_document doc;
+    pugi::xml_node root = doc.append_child("bvh");
+    if (_bvh)
+        _bvh->toXml(root);
+    doc.save(os, "", pugi::format_raw | pugi::format_no_declaration);
+}
+
+void Scene::importBvh(const std::string& filename) {
+    if (_bvh)
+        return;
+    std::cout << "Loading BVH from " << filename << "...\n";
+    pugi::xml_document doc;
+    doc.load_file(filename.c_str());
+    pugi::xml_node root = doc.child("bvh").child("bv");
+    _bvh = std::move(BoundingVolume::fromXml(root, _tris));
+    if (_bvh)
+        std::cout << "Successfully Loaded BVH\n";
+    else
+        std::cout << "Could not load BVH\n";
 }
 
 std::ostream& operator<<(std::ostream& os, Scene& s) {
-    long triCount = 0;
-    for (Mesh& mesh : s._meshes)
-        triCount += mesh.tris.size();
     os << "[Scene resolution=" << s._width << "x" << s._height << " antialias=" << s._antialias
        << " maxDepth=" << s._maxDepth << " | " << s._lights.size() << " lights, "
-       << s._spheres.size() << " spheres, " << s._meshes.size() << " meshes, " << triCount
+       << s._spheres.size() << " spheres, " << s._meshes.size() << " meshes, " << s._tris.size()
        << " triangles]";
     return os;
 }

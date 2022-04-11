@@ -8,7 +8,13 @@
       "name": "(Windows) Launch",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/render_all.py",
+      // "program": "${workspaceFolder}/render_all.py",
+      "program": "${workspaceFolder}/x64/Debug/PathTracer.exe",
+      "args": [
+        "scenes/stress_test.scene",
+        "out/stress_test.bmp",
+        "cache/stress_test.bvh"
+      ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],

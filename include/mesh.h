@@ -15,10 +15,15 @@ struct Mesh {
     //glm::vec3 bounds[2];
     AABB AABbox;
     std::vector<Triangle> tris;
-    
-   
+    std::string filename = "";
+
+    Mesh(const std::string& filename = "");
+    Mesh(Material m, const std::vector<Triangle>& tris);
+    Mesh(const Mesh& mesh);
     float raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal);
-    void loadStl(std::string filename);
+    void loadStl(const std::string& filename);
+    pugi::xml_node toXml(pugi::xml_node& root);
+    static Mesh fromXml(pugi::xml_node node);
 };
 
 }  // namespace path_tracer

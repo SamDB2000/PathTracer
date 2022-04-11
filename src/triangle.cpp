@@ -25,4 +25,44 @@ float Triangle::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, g
     return t;
 }
 
+pugi::xml_node Triangle::toXml(pugi::xml_node& root) {
+    pugi::xml_node triNode = root.append_child("tri");
+
+    pugi::xml_node v;
+    v = triNode.append_child("v");
+    v.append_attribute("x") = v0.x;
+    v.append_attribute("y") = v0.y;
+    v.append_attribute("z") = v0.z;
+
+    v = triNode.append_child("v");
+    v.append_attribute("x") = v1.x;
+    v.append_attribute("y") = v1.y;
+    v.append_attribute("z") = v1.z;
+
+    v = triNode.append_child("v");
+    v.append_attribute("x") = v2.x;
+    v.append_attribute("y") = v2.y;
+    v.append_attribute("z") = v2.z;
+    return triNode;
+}
+
+Triangle Triangle::fromXml(pugi::xml_node node) {
+    Triangle tri;
+    auto vt = node.children("v").begin();
+    tri.v0.x = vt->attribute("x").as_float();
+    tri.v0.y = vt->attribute("y").as_float();
+    tri.v0.z = vt->attribute("z").as_float();
+
+    vt++;
+    tri.v1.x = vt->attribute("x").as_float();
+    tri.v1.y = vt->attribute("y").as_float();
+    tri.v1.z = vt->attribute("z").as_float();
+
+    vt++;
+    tri.v2.x = vt->attribute("x").as_float();
+    tri.v2.y = vt->attribute("y").as_float();
+    tri.v2.z = vt->attribute("z").as_float();
+    return tri;
+}
+
 }  // namespace path_tracer
