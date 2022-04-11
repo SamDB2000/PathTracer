@@ -8,12 +8,13 @@
 #include <sstream>
 #include <list>
 #include <iostream>
+#include <random>
 
 namespace path_tracer {
 
 /*
-* Initialize scene based on file input.
-*/
+ * Initialize scene based on file input.
+ */
 Scene::Scene(const std::string& filename)
     : _backgroundColor(0.1f, 0.1f, 0.1f),
       _maxDepth(4),
@@ -94,9 +95,9 @@ Scene::Scene(const std::string& filename)
 }
 
 /*
-* Overall raycast function, calls individual raycast for all spheres and BVH objects.
-* Returns minimum distance ray travels to intersection with object.
-*/
+ * Overall raycast function, calls individual raycast for all spheres and BVH objects.
+ * Returns minimum distance ray travels to intersection with object.
+ */
 float Scene::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm::vec3& normal,
                      Material& mat) {
     float inf = std::numeric_limits<float>::infinity();
@@ -130,9 +131,9 @@ float Scene::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hitPos, glm:
     return minDist < inf ? minDist : 0.0f;
 }
 
-/* 
-* Calls raycast with default hitPos, normal, and mat perameters.
-*/
+/*
+ * Calls raycast with default hitPos, normal, and mat perameters.
+ */
 float Scene::raycast(glm::vec3 rayPos, glm::vec3 rayDir) {
     glm::vec3 hitPos;
     glm::vec3 normal;
@@ -142,10 +143,10 @@ float Scene::raycast(glm::vec3 rayPos, glm::vec3 rayDir) {
 }
 
 /*
-* Raytrace function called for every ray sample.
-* Returns the color of the first point of interesection.
-*/
-glm::vec3 Scene::raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter) {
+ * Raytrace function called for every ray sample.
+ * Returns the color of the first point of interesection.
+ */
+glm::vec3 Scene::raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter, int numIndirect) {
     if (iter >= _maxDepth)
         return glm::vec3(0.0f);
     glm::vec3 color = _backgroundColor;
@@ -155,60 +156,35 @@ glm::vec3 Scene::raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter) {
     float dist = raycast(rayPos, rayDir, hitPos, normal, mat);
     if (dist > 0.0f) {
         color = mat.amb;
-        
-        // Russian Roulette (using maximum reflectivity)
-        //float p = color.x>color.y && color.x>color.z ? color.x : color.y>color.z ? color.y:color.z;
-        //float randNum = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-        //if (iter > _maxDepth / 2) {
-        //    if (randNum < p * 0.9f) {
-        //        color = color * (0.9f / p);
-        //    } else {
-        //        return glm::vec3(0.0f);
-        //        // return m.get_emission();   in example
-        //    }
-        //}
-
-
-
-
-        glm::vec3 shadowRayStart = hitPos + 0.0001f * normal;
+        glm::vec3 adjHitPos = hitPos + 0.0001f * normal;
         for (Light& light : _lights) {
             glm::vec3 toLight = light.pos - hitPos;
             glm::vec3 toLightNorm = glm::normalize(toLight);
 
-            float shadowRay = raycast(shadowRayStart, toLightNorm);
+            float shadowRay = raycast(adjHitPos, toLightNorm);
             // If intersection is not in shadow
             if (shadowRay == 0.0f || shadowRay > glm::distance(light.pos, hitPos)) {
-                // Diffuse
-                float diffuseFactor = std::max(glm::dot(normal, toLightNorm), 0.0f);
-                color += light.diff * mat.diff * diffuseFactor;
-                // Specular
-                color +=
-                    light.spec * mat.spec *
+                // Phong Model
+                float diffFactor = std::max(glm::dot(normal, toLightNorm), 0.0f);
+                float specFactor =
                     std::pow(glm::dot(-rayDir, glm::reflect(toLightNorm, normal)), mat.shininess);
+                color += light.diff * mat.diff * diffFactor + light.spec * mat.spec * specFactor;
             }
 
+            // indirect illumination
+            glm::vec3 indirectColor(0.0f);
+            for (int i = 0; i < numIndirect; i++) {
+                glm::vec3 v = randHemi(normal);
+                indirectColor +=
+                    glm::dot(normal, v) * raytrace(adjHitPos, v, iter + 1, numIndirect / 2);
+            }
+            if (numIndirect > 0)
+                indirectColor /= numIndirect;
+            color += indirectColor;
             // If the material has any specular properties, cast reflectance ray
             if (mat.spec != glm::vec3(0.0f)) {
-                color += mat.spec * 0.5f *
-                         raytrace(shadowRayStart, glm::reflect(rayDir, normal), iter + 1);
-            }
-
-            // If material has diffuse properties, cast random reflectance ray
-            if (mat.diff != glm::vec3(0.0f)) {
-                glm::vec3 n1 = glm::dot(normal, rayDir) < 0 ? normal : normal *= -1;
-                // r1 = random angle b/w [0, 2pi]
-                float r1 = glm::two_pi<float>() * static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-                float r2 = static_cast<float>(rand()) / static_cast<float>(RAND_MAX); 
-                float r2s = glm::sqrt(r2); // random distance from center
-                // Coordinate system to sample hemisphere
-                glm::vec3 sw = n1;
-                glm::vec3 su = glm::normalize(glm::cross(fabs(sw.x)>.1 ? glm::vec3(0, 1, 0) : glm::vec3(1, 0, 0), sw));
-                glm::vec3 sv = glm::cross(sw, su);
-                // Random ray direction in sample hemisphere
-                glm::vec3 d = glm::normalize(su*cosf(r1)*r2s + sv*sin(r1)*r2s + sw*sqrt(1-r2));
-
-                color += mat.diff * 0.4f * raytrace(shadowRayStart, d, iter += 1);
+                color += mat.spec * raytrace(adjHitPos, glm::reflect(rayDir, normal), iter + 1,
+                                             numIndirect / 2);
             }
         }
     }
@@ -216,9 +192,27 @@ glm::vec3 Scene::raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter) {
 }
 
 /*
-* Render function for entire scene.
-* Calls raytrace for each sample (based on camera/image settings) and writes to bmp.
-*/
+ * Returns a point on the unit hemisphere, centered on the normal
+ */
+glm::vec3 Scene::randHemi(glm::vec3 normal) {
+    // r1 = random angle b/w [0, 2pi]
+    float r1 = glm::two_pi<float>() * static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    float r2 = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    float r2s = glm::sqrt(r2);  // random distance from center
+    // Coordinate system to sample hemisphere
+    glm::vec3 sw = normal;
+    glm::vec3 su = glm::normalize(glm::cross(
+        fabs(sw.x) > 0.1f ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::vec3(1.0f, 0.0f, 0.0f), sw));
+    glm::vec3 sv = glm::cross(sw, su);
+    // Random ray direction in sample hemisphere
+    glm::vec3 d = glm::normalize(su * cosf(r1) * r2s + sv * sin(r1) * r2s + sw * sqrt(1 - r2));
+    return d;
+}
+
+/*
+ * Render function for entire scene.
+ * Calls raytrace for each sample (based on camera/image settings) and writes to bmp.
+ */
 void Scene::render(const std::string& filename) {
     // Set clock and random number seed
     clock_t timeStart = clock();
