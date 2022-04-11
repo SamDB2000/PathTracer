@@ -155,6 +155,22 @@ glm::vec3 Scene::raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter) {
     float dist = raycast(rayPos, rayDir, hitPos, normal, mat);
     if (dist > 0.0f) {
         color = mat.amb;
+        
+        // Russian Roulette (using maximum reflectivity)
+        //float p = color.x>color.y && color.x>color.z ? color.x : color.y>color.z ? color.y:color.z;
+        //float randNum = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+        //if (iter > _maxDepth / 2) {
+        //    if (randNum < p * 0.9f) {
+        //        color = color * (0.9f / p);
+        //    } else {
+        //        return glm::vec3(0.0f);
+        //        // return m.get_emission();   in example
+        //    }
+        //}
+
+
+
+
         glm::vec3 shadowRayStart = hitPos + 0.0001f * normal;
         for (Light& light : _lights) {
             glm::vec3 toLight = light.pos - hitPos;
@@ -192,7 +208,7 @@ glm::vec3 Scene::raytrace(glm::vec3 rayPos, glm::vec3 rayDir, int iter) {
                 // Random ray direction in sample hemisphere
                 glm::vec3 d = glm::normalize(su*cosf(r1)*r2s + sv*sin(r1)*r2s + sw*sqrt(1-r2));
 
-                color += mat.diff * 0.5f * raytrace(shadowRayStart, d, iter += 1);
+                color += mat.diff * 0.4f * raytrace(shadowRayStart, d, iter += 1);
             }
         }
     }
@@ -218,7 +234,8 @@ void Scene::render(const std::string& filename) {
     glm::vec3 u = glm::cross(v, l);
 
     float aspectRatio = (float) width / height;
-    float focalLength = 1.0f / glm::tan(_fov / 2.0f);
+    float rad_fov = _fov * glm::pi<float>() / 180.0;
+    float focalLength = 1.0f / glm::tan(rad_fov / 2.0f);
     glm::vec3 ll = _eye + focalLength * l - aspectRatio * v - u;
 
     size_t completed = 0;
@@ -228,7 +245,7 @@ void Scene::render(const std::string& filename) {
         float x = i / width;
         float y = i % width;
         glm::vec3 p =
-            ll + 2.0f * aspectRatio * v * ((float) x / width) + 2.0f * u * ((float) y / height);
+            ll + 2.0f * aspectRatio * v * ((float) x / (float)width) + 2.0f * u * ((float) y / (float)height);
         glm::vec3 ray = glm::normalize(p - _eye);
         buffer[x][y] = glm::clamp(raytrace(_eye, ray), glm::vec3(0.0f), glm::vec3(1.0f));
 
