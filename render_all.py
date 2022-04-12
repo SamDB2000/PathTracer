@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+from platform import platform
 import sys
 import subprocess
 
@@ -11,7 +12,12 @@ def render(in_file, out_dir, cache_dir):
     print(f'Rendering {in_file}')
 
     program = os.path.join(os.path.dirname(__file__), 'x64', 'Release', 'PathTracer.exe')
-    subprocess.run([program, in_file, out_file, cache_file], stderr=sys.stderr, stdout=sys.stdout)
+    args = [in_file, out_file, cache_file]
+    if sys.platform == 'windows':
+        args.insert(0, os.path.join(os.path.dirname(__file__), 'x64', 'Release', 'PathTracer.exe'))
+    elif sys.platform == 'linux':
+        args.insert(0, os.path.join(os.path.dirname(__file__), 'build', 'PathTracer'))
+    subprocess.run(args, stderr=sys.stderr, stdout=sys.stdout)
 
 def main():
     scene_dir = os.path.join(os.path.dirname(__file__), 'scenes')

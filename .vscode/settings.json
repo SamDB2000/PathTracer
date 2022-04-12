@@ -1,5 +1,4 @@
 {
-  "clang-format.executable": "C:\\Program Files\\LLVM\\bin\\clang-format.exe",
   "files.associations": {
     "*.vcxproj": "xml",
     "config": "properties",
@@ -76,6 +75,16 @@
     "xhash": "cpp",
     "queue": "cpp",
     "deque": "cpp",
-    "random": "cpp"
+    "random": "cpp",
+    "*.tcc": "cpp",
+    "codecvt": "cpp",
+    "condition_variable": "cpp",
+    "cwctype": "cpp",
+    "memory_resource": "cpp",
+    "numeric": "cpp",
+    "string_view": "cpp",
+    "numbers": "cpp",
+    "semaphore": "cpp",
+    "variant": "cpp"
   },
 }
