@@ -13,7 +13,7 @@ def render(in_file, out_dir, cache_dir):
 
     program = os.path.join(os.path.dirname(__file__), 'x64', 'Release', 'PathTracer.exe')
     args = [in_file, out_file, cache_file]
-    if sys.platform == 'windows':
+    if sys.platform == 'win32':
         args.insert(0, os.path.join(os.path.dirname(__file__), 'x64', 'Release', 'PathTracer.exe'))
     elif sys.platform == 'linux':
         args.insert(0, os.path.join(os.path.dirname(__file__), 'build', 'PathTracer'))
