@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<scene>
+    <camera maxDepth="2" antialias="4" width="200" height="200" fov="60">
+        <background r="0" g="0" b="0" />
+        <up x="0" y="1" z="0" />
+        <lookAt x="0" y="-0.25" z="0" />
+        <eye x="1.5" y="1.5" z="1.5" />
+    </camera>
+    <objects>
+        <light>
+            <pos x="0" y="0.1" z="0.5" />
+            <diff r="0.4" g="0.4" b="0.4" />
+            <spec r="0.4" g="0.4" b="0.4" />
+        </light>
+        <light>
+            <pos x="10" y="10" z="0" />
+            <diff r="0.1" g="0.1" b="0.1" />
+            <spec r="0.1" g="0.1" b="0.1" />
+        </light>
+        <mesh type="stl" filename="models/Ring.stl">
+            <material>
+                <diff r="0.6" g="0.6" b="0.6" />
+                <spec r="0.774597" g="0.774597" b="0.774597" />
+                <shininess value="77" />
+                <amb r="0.05" g="0.05" b="0.05" />
+            </material>
+        </mesh>
+         <mesh type="quad">
+            <material>
+                <diff r="0.64" g="0.99" b="0.73" />
+                <spec r="0.316228" g="0.316228" b="0.316228" />
+                <shininess value="13" />
+                <amb r="0.035" g="0.1225" b="0.0575" />
+            </material>
+            <verts>
+                <v x="-15" y="-0.15" z="15" />
+                <v x="-15" y="-0.15" z="-15" />
+                <v x="15" y="-0.15" z="15" />
+            </verts>
+    </objects>
+</scene>

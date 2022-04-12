@@ -250,7 +250,7 @@ void Scene::render(const std::string& filename) {
 
     size_t completed = 0;
 
-    // Forward path tracing
+    // Backward path tracing
 #pragma omp parallel for
     for (int i = 0; i < width * height; i++) {
         float x = i / width;
@@ -282,13 +282,11 @@ void Scene::render(const std::string& filename) {
         }
     }
 
-    // Backward path tracing
+    // Forward path tracing
     for (int i = 0; i < _backwardsDepth; i++) {
 #pragma omp parallel for
         for (int j = 0; j < backwardsRays.size(); j++) {
             auto& ray = backwardsRays[j];
-            if (ray[1] == glm::vec3(0.0f))
-                continue;
             glm::vec3 hitPos;
             glm::vec3 normal;
             Material mat;
@@ -324,7 +322,10 @@ void Scene::render(const std::string& filename) {
                 ray[0] = adjHitPos;
                 ray[1] = glm::reflect(ray[1], normal);
             } else {
-                ray[1] = glm::vec3(0.0f);
+                int idx = std::rand() % _lights.size();
+                ray[0] = _lights[idx].pos;
+                ray[1] = randSphere();
+                ray[2] = _lights[idx].spec * (1.0f / (_antialias * _antialias * _antialias * _antialias));
             }
         }
         int progress = 10000 * i / _backwardsDepth / 2;
