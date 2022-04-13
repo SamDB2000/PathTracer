@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <iostream>
 #include <queue>
+#include <chrono>
 
 namespace path_tracer {
 
@@ -28,17 +29,16 @@ BoundingVolume::BoundingVolume(Triangle* tri, size_t id)
 BoundingVolume::BoundingVolume(Ptr bv0, Ptr bv1)
     : _isRoot(true),
       _isLeaf(false),
-      _child0(std::move(bv0)),
-      _child1(std::move(bv1)),
+      _children{ std::move(bv0), std::move(bv1) },
       _aabb(bv0->_aabb, bv1->_aabb) {
-    _child0->_isRoot = false;
-    _child1->_isRoot = false;
+    _children[0]->_isRoot = false;
+    _children[1]->_isRoot = false;
 }
 
 BoundingVolume::~BoundingVolume() {
     if (!_isLeaf) {
-        _child0.~unique_ptr();
-        _child1.~unique_ptr();
+        _children[0].~unique_ptr();
+        _children[1].~unique_ptr();
     }
 }
 
@@ -70,12 +70,12 @@ float BoundingVolume::raycast(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3& hit
         glm::vec3 hit0;
         glm::vec3 norm0;
         Material mat0;
-        float dist0 = _child0->raycast(rayPos, rayDir, hit0, norm0, mat0);
+        float dist0 = _children[0]->raycast(rayPos, rayDir, hit0, norm0, mat0);
 
         glm::vec3 hit1;
         glm::vec3 norm1;
         Material mat1;
-        float dist1 = _child1->raycast(rayPos, rayDir, hit1, norm1, mat1);
+        float dist1 = _children[1]->raycast(rayPos, rayDir, hit1, norm1, mat1);
 
         if ((dist0 > 0.0 && dist1 > 0.0 && dist0 < dist1) || (dist0 > 0.0 && dist1 <= 0.0)) {
             hitPos = hit0;
@@ -105,8 +105,8 @@ pugi::xml_node BoundingVolume::toXml(pugi::xml_node& root) {
         node.append_attribute("z1") = _aabb.bounds[1].z;
         node.append_attribute("id") = _id;
     } else {
-        _child0->toXml(node);
-        _child1->toXml(node);
+        _children[0]->toXml(node);
+        _children[1]->toXml(node);
     }
 
     return node;

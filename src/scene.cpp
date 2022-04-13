@@ -9,6 +9,7 @@
 #include <list>
 #include <iostream>
 #include <array>
+#include <chrono>
 
 namespace path_tracer {
 
@@ -206,7 +207,8 @@ glm::vec3 Scene::randHemi(glm::vec3 normal) {
         fabs(sw.x) > 0.1f ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::vec3(1.0f, 0.0f, 0.0f), sw));
     glm::vec3 sv = glm::cross(sw, su);
     // Random ray direction in sample hemisphere
-    glm::vec3 d = glm::normalize(su * cosf(r1) * r2s + sv * sin(r1) * r2s + sw * sqrt(1 - r2));
+    glm::vec3 d = glm::normalize(su * std::cos(r1) * r2s + sv * std::sin(r1) * r2s +
+                                 sw * std::sqrt(1.0f - r2));
     return d;
 }
 
@@ -226,8 +228,8 @@ glm::vec3 Scene::randSphere() {
  */
 void Scene::render(const std::string& filename) {
     // Set clock and random number seed
-    clock_t timeStart = clock();
-    srand(static_cast<unsigned>(time(0)));
+    clock_t timeStart = std::clock();
+    std::srand(static_cast<unsigned>(std::time(0)));
 
     int width = _width * _antialias;
     int height = _height * _antialias;
@@ -248,7 +250,7 @@ void Scene::render(const std::string& filename) {
 
     size_t completed = 0;
 
-    // Forward path tracing
+    // Backward path tracing
 #pragma omp parallel for
     for (int i = 0; i < width * height; i++) {
         float x = i / width;
@@ -280,13 +282,11 @@ void Scene::render(const std::string& filename) {
         }
     }
 
-    // Backward path tracing
+    // Forward path tracing
     for (int i = 0; i < _backwardsDepth; i++) {
 #pragma omp parallel for
         for (int j = 0; j < backwardsRays.size(); j++) {
             auto& ray = backwardsRays[j];
-            if (ray[1] == glm::vec3(0.0f))
-                continue;
             glm::vec3 hitPos;
             glm::vec3 normal;
             Material mat;
@@ -322,7 +322,10 @@ void Scene::render(const std::string& filename) {
                 ray[0] = adjHitPos;
                 ray[1] = glm::reflect(ray[1], normal);
             } else {
-                ray[1] = glm::vec3(0.0f);
+                int idx = std::rand() % _lights.size();
+                ray[0] = _lights[idx].pos;
+                ray[1] = randSphere();
+                ray[2] = _lights[idx].spec * (1.0f / (_antialias * _antialias * _antialias * _antialias));
             }
         }
         int progress = 10000 * i / _backwardsDepth / 2;
@@ -330,7 +333,7 @@ void Scene::render(const std::string& filename) {
         int dec = progress % 100;
         std::cout << "\rRendering " << per << "." << dec << "% complete  " << std::flush;
     }
-    clock_t timeEnd = clock();
+    clock_t timeEnd = std::clock();
     std::cout << "\rRendering 100% complete. Writing to " << filename << '\n';
     std::cout << "Render time: " << (float) (timeEnd - timeStart) / CLOCKS_PER_SEC << " (sec)\n";
 
@@ -346,9 +349,9 @@ void Scene::render(const std::string& filename) {
                     color += buffer[_antialias * j + r][_antialias * i + c];
             color /= _antialias * _antialias;
             color = glm::clamp(color, glm::vec3(0.0f), glm::vec3(1.0f));
-            uint8_t r = (uint8_t)(255 * color.r);
-            uint8_t g = (uint8_t)(255 * color.g);
-            uint8_t b = (uint8_t)(255 * color.b);
+            uint8_t r = (uint8_t) (255 * color.r);
+            uint8_t g = (uint8_t) (255 * color.g);
+            uint8_t b = (uint8_t) (255 * color.b);
             ofs.write((char*) &b, sizeof(uint8_t));
             ofs.write((char*) &g, sizeof(uint8_t));
             ofs.write((char*) &r, sizeof(uint8_t));

@@ -43,10 +43,7 @@ private:
     bool _isRoot;
     bool _isLeaf;
     union {
-        struct {
-            Ptr _child0;
-            Ptr _child1;
-        };
+        Ptr _children[2];
         struct {
             Triangle* _tri;
             size_t _id;

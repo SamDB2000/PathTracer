@@ -18,12 +18,12 @@ struct AABB {
         bounds[1] = vmax;
     }
     AABB(const AABB& aabb0, const AABB& aabb1) {
-        bounds[0].x = std::min(aabb0.bounds[0].x, aabb1.bounds[0].x);
-        bounds[0].y = std::min(aabb0.bounds[0].y, aabb1.bounds[0].y);
-        bounds[0].z = std::min(aabb0.bounds[0].z, aabb1.bounds[0].z);
-        bounds[1].x = std::max(aabb0.bounds[1].x, aabb1.bounds[1].x);
-        bounds[1].y = std::max(aabb0.bounds[1].y, aabb1.bounds[1].y);
-        bounds[1].z = std::max(aabb0.bounds[1].z, aabb1.bounds[1].z);
+        bounds[0].x = std::fmin(aabb0.bounds[0].x, aabb1.bounds[0].x);
+        bounds[0].y = std::fmin(aabb0.bounds[0].y, aabb1.bounds[0].y);
+        bounds[0].z = std::fmin(aabb0.bounds[0].z, aabb1.bounds[0].z);
+        bounds[1].x = std::fmax(aabb0.bounds[1].x, aabb1.bounds[1].x);
+        bounds[1].y = std::fmax(aabb0.bounds[1].y, aabb1.bounds[1].y);
+        bounds[1].z = std::fmax(aabb0.bounds[1].z, aabb1.bounds[1].z);
     }
 
     // No use in finding place of hit since only used for BVH's
